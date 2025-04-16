@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 import '../services/auth_service.dart';
 import 'saree_detail_screen.dart';
 import 'add_post_screen.dart';
@@ -18,16 +19,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isLoading = false;
 
   void _handleSignOut() async {
     try {
+      setState(() => _isLoading = true);
       await widget.authService.signOut();
+      setState(() => _isLoading = false);
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
-    } catch (e) {
+    } on SocketException catch (e) {
+      setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to sign out')),
+        const SnackBar(
+            content:
+                Text('Network error: Please check your internet connection')),
+      );
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign out: ${e.toString()}')),
       );
     }
   }
@@ -73,7 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('sarees').orderBy('createdAt', descending: true).snapshots(),
+        stream: _firestore
+            .collection('sarees')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -221,7 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProfileScreen(authService: widget.authService),
+                builder: (context) =>
+                    ProfileScreen(authService: widget.authService),
               ),
             );
           }

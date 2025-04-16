@@ -1,25 +1,33 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/check_auth_status.dart';
 import 'firebase_options.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
-  // Update App Check configuration
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.playIntegrity,
-  );
+  try {
+    print("Initializing Firebase...");
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Update App Check configuration
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+    );
+    print("Firebase initialized successfully");
+  } catch (e) {
+    print("Firebase initialization error: $e");
+  }
 
   final authService = AuthService();
   runApp(MyApp(authService: authService));
@@ -27,82 +35,57 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final AuthService authService;
-  
+
   const MyApp({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Binimoy',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: StreamBuilder<User?>(
-        stream: authService.authStateChanges,
+    return ScreenUtilInit(
+      designSize: const Size(360, 800), // Base design size
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (_, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Binimoy',
+          theme: ThemeData(
+            primarySwatch: Colors.green,
+            scaffoldBackgroundColor: Colors.white,
+            // Make text scale responsive
+            textTheme: Typography.englishLike2018.apply(fontSizeFactor: 1.sp),
+          ),
+          home: child,
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/home': (context) => HomeScreen(authService: authService),
+            '/check-auth': (context) =>
+                CheckAuthStatus(authService: authService),
+          },
+          // Add navigation observer for debugging
+          navigatorObservers: [
+            NavigatorObserver(),
+          ],
+        );
+      },
+      child: StreamBuilder<User?>(
+        // Use StreamBuilder with authStateChanges for reactive auth state
+        stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
+          // Show loading screen while determining auth state
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const LoadingScreen();
           }
-          
-          final user = snapshot.data;
-          if (user != null) {
-            // Navigate to home screen when user is logged in
+
+          // User is logged in
+          if (snapshot.hasData && snapshot.data != null) {
+            print("User authenticated: ${snapshot.data!.uid}");
             return HomeScreen(authService: authService);
           }
-          
+
+          // User is not logged in
           return const LoginScreen();
         },
-      ),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-      },
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
