@@ -171,4 +171,34 @@ class AuthService {
 
   // Check if user is signed in
   bool get isSignedIn => currentUser != null;
+
+  // Ensure authentication is complete - this will help ensure auth state is propagated
+  Future<bool> ensureAuthCompleted(User user) async {
+    try {
+      // Wait for a short time to allow auth state to propagate
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Verify the user is still logged in
+      final currentUser = _auth.currentUser;
+      if (currentUser == null || currentUser.uid != user.uid) {
+        print(
+            'Auth state verification failed: Current user is null or different');
+        return false;
+      }
+
+      // Force reload user data
+      try {
+        await currentUser.reload();
+      } catch (e) {
+        print('User reload error: $e');
+        // Continue anyway as this might not be critical
+      }
+
+      print('Auth state verification successful for user: ${currentUser.uid}');
+      return true;
+    } catch (e) {
+      print('Error ensuring auth completion: $e');
+      return false;
+    }
+  }
 }

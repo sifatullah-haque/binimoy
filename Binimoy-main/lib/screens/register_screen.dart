@@ -45,6 +45,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (result.user != null) {
+        print("Registration successful, ensuring auth state propagation...");
+
+        // Ensure auth is complete before navigation
+        final authVerified =
+            await _authService.ensureAuthCompleted(result.user!);
+
+        if (!mounted) return;
+
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Registration successful!'),
@@ -52,9 +61,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
 
-        // Navigate after registration
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/home', (route) => false);
+        if (authVerified) {
+          print("Auth state verified, navigating to home screen");
+          // Use pushNamedAndRemoveUntil to clear navigation history
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false, // Remove all previous routes
+          );
+        } else {
+          // This is unlikely but handle it just in case
+          setState(() {
+            _isLoading = false;
+            _errorMessage =
+                'Authentication state failed to update. Please try again or log in.';
+          });
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -62,6 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _errorMessage = e.message ?? 'Registration failed';
       });
     } catch (e) {
+      print('Registration error: $e');
       setState(() {
         _isLoading = false;
         _errorMessage = 'Registration failed: ${e.toString()}';

@@ -74,25 +74,35 @@ class MyApp extends StatelessWidget {
           ],
         );
       },
-      child: StreamBuilder<User?>(
-        // Use StreamBuilder with authStateChanges for reactive auth state
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          // Show loading screen while determining auth state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingScreen();
-          }
+      child: FutureBuilder(
+          // Add a small delay to allow Firebase to initialize auth state
+          future: Future.delayed(const Duration(milliseconds: 500)),
+          builder: (context, snapshot) {
+            // Show loading screen until the delay completes
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const LoadingScreen();
+            }
 
-          // User is logged in
-          if (snapshot.hasData && snapshot.data != null) {
-            print("User authenticated: ${snapshot.data!.uid}");
-            return HomeScreen(authService: authService);
-          }
+            return StreamBuilder<User?>(
+              // Use StreamBuilder with authStateChanges for reactive auth state
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                // Show loading screen while determining auth state
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const LoadingScreen();
+                }
 
-          // User is not logged in
-          return const LoginScreen();
-        },
-      ),
+                // User is logged in
+                if (snapshot.hasData && snapshot.data != null) {
+                  print("User authenticated: ${snapshot.data!.uid}");
+                  return HomeScreen(authService: authService);
+                }
+
+                // User is not logged in
+                return const LoginScreen();
+              },
+            );
+          }),
     );
   }
 }

@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Show a longer loading state to ensure Firebase completes auth state changes
+      // Login attempt
       final result = await _authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -105,24 +105,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // If login successful but navigation hasn't happened automatically
       if (result.user != null) {
-        print("Login successful, navigating to home...");
+        print("Login successful, ensuring auth state propagation...");
 
-        // Use a small delay to ensure Firebase auth state has propagated
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Ensure auth is complete before navigation
+        final authVerified =
+            await _authService.ensureAuthCompleted(result.user!);
 
         if (!mounted) return;
 
-        // Clear any error state before navigation
-        setState(() {
-          _isLoading = false;
-          _errorMessage = null;
-        });
+        if (authVerified) {
+          // Clear any error state before navigation
+          setState(() {
+            _isLoading = false;
+            _errorMessage = null;
+          });
 
-        // Use Navigator.pushAndRemoveUntil to ensure clean navigation state
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/home',
-          (route) => false, // Remove all previous routes
-        );
+          print("Auth state verified, navigating to home screen");
+          // Use Navigator.pushAndRemoveUntil to ensure clean navigation state
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false, // Remove all previous routes
+          );
+        } else {
+          // This is unlikely to happen but handle it just in case
+          setState(() {
+            _isLoading = false;
+            _errorMessage =
+                'Authentication state failed to update. Please try again.';
+          });
+        }
       } else {
         throw Exception('Login failed: User is null');
       }
