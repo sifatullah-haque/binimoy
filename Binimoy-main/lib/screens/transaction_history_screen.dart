@@ -737,7 +737,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
 
                           // Seller name
                           Text(
-                            'Seller: ${transaction.sellerName}',
+                            'Seller: ${transaction.sellerName.isEmpty ? 'Anonymous' : transaction.sellerName}',
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: Colors.grey.shade700,

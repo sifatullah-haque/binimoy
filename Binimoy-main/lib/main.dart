@@ -1,9 +1,9 @@
+import 'package:binimoy/screens/transaction_history_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/loading_screen.dart';
@@ -62,6 +62,8 @@ class MyApp extends StatelessWidget {
             '/home': (context) => HomeScreen(authService: authService),
             '/check-auth': (context) =>
                 CheckAuthStatus(authService: authService),
+            '/transaction_history': (context) =>
+                const TransactionHistoryScreen(),
           },
           // Add navigation observer for debugging
           navigatorObservers: [

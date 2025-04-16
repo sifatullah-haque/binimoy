@@ -21,6 +21,13 @@ service cloud.firestore {
          request.auth.uid == chatData.receiverId);
     }
 
+    // Helper functions to check if the update is a valid transaction
+    function isValidTransactionUpdate(sareeData) {
+      let diff = request.resource.data.diff(resource.data);
+      return diff.affectedKeys().hasOnly(['isAvailable', 'lastTransactionId', 'rentalStatus']) &&
+             request.auth != null;
+    }
+
     // Users collection rules
     match /users/{userId} {
       // Allow users to read and write only their own documents
@@ -31,7 +38,12 @@ service cloud.firestore {
     match /sarees/{sareeId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isOwner(resource.data.userId);
+      // Updated rule to allow buyers to update saree availability during purchase/rental
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isValidTransactionUpdate(resource.data)
+      );
+      allow delete: if isOwner(resource.data.userId);
     }
 
     // Transaction collection rules
@@ -40,8 +52,7 @@ service cloud.firestore {
         request.auth.uid == resource.data.buyerId || 
         request.auth.uid == resource.data.sellerId
       );
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.buyerId;
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.buyerId || 
         request.auth.uid == resource.data.sellerId

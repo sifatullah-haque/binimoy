@@ -286,8 +286,7 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
                                           ),
                                           SizedBox(width: 8.w),
                                           Text(
-                                            widget.saree['userName'] ??
-                                                'Unknown seller',
+                                            'Seller: ${widget.saree['userName'] ?? 'Anonymous'}',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey.shade700,

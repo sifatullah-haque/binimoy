@@ -1,3 +1,4 @@
+import 'package:binimoy/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -106,7 +107,8 @@ class _BuySareeScreenState extends State<BuySareeScreen>
       // Create transaction document
       final transactionRef =
           await FirebaseFirestore.instance.collection('transactions').add({
-        'sareeId': widget.saree['id'],
+        'sareeId': widget.saree['documentId'] ??
+            widget.saree['id'], // Try both possible ID fields
         'sareeName': widget.saree['name'] ?? 'Unknown',
         'sareeImage': widget.saree['imageUrl'] ?? '',
         'buyerId': user.uid,
@@ -116,18 +118,25 @@ class _BuySareeScreenState extends State<BuySareeScreen>
         'buyerCity': _cityController.text,
         'buyerPostalCode': _postalCodeController.text,
         'sellerId': widget.saree['userId'] ?? '',
-        'sellerName': widget.saree['userName'] ?? 'Unknown',
-        'type': 'TransactionType.buy',
-        'status': 'TransactionStatus.pending',
+        'sellerName': widget.saree['userName'] ?? 'Anonymous',
+        'type': TransactionType.buy
+            .toString(), // Fix: Changed from string to enum toString()
+        'status': TransactionStatus.pending.toString(),
         'amount': widget.saree['price'] ?? 0.0,
         'paymentMethod': _selectedPaymentMethod,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Get the saree ID
+      final sareeId = widget.saree['documentId'] ?? widget.saree['id'];
+      if (sareeId == null) {
+        throw Exception('Invalid saree ID');
+      }
+
       // Update the saree document
       await FirebaseFirestore.instance
           .collection('sarees')
-          .doc(widget.saree['id'])
+          .doc(sareeId)
           .update({
         'isAvailable': false,
         'lastTransactionId': transactionRef.id,
@@ -135,52 +144,16 @@ class _BuySareeScreenState extends State<BuySareeScreen>
 
       if (!mounted) return;
 
-      // Show success message
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.green.shade700,
-                size: 24.r,
-              ),
-              SizedBox(width: 8.w),
-              Text('Order Confirmed'),
-            ],
-          ),
-          content: Text(
-            'Your order has been placed successfully! The seller will ship your saree soon.',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      // Navigate to transaction history screen directly
+      Navigator.pushNamedAndRemoveUntil(
+          context, '/transaction_history', (route) => route.isFirst);
     } catch (e) {
       print('Transaction error: $e');
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to process order. Please try again.'),
+          content: Text('Failed to process order: ${e.toString()}'),
           backgroundColor: Colors.red.shade400,
         ),
       );
@@ -507,7 +480,7 @@ class _BuySareeScreenState extends State<BuySareeScreen>
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'Seller: ${widget.saree['userName'] ?? 'Unknown seller'}',
+                      'Seller: ${widget.saree['userName'] ?? 'Anonymous'}',
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Colors.grey.shade700,

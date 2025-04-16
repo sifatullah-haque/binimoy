@@ -1,3 +1,4 @@
+import 'package:binimoy/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -183,9 +184,10 @@ class _RentSareeScreenState extends State<RentSareeScreen>
         'buyerPhone': _phoneController.text,
         'buyerAddress': _addressController.text,
         'sellerId': widget.saree['userId'] ?? '',
-        'sellerName': widget.saree['userName'] ?? 'Unknown',
-        'type': 'TransactionType.rent',
-        'status': 'TransactionStatus.pending',
+        'sellerName': widget.saree['userName'] ?? 'Anonymous',
+        'type': TransactionType.rent
+            .toString(), // Fix: Changed from string to enum toString()
+        'status': TransactionStatus.pending.toString(),
         'amount': totalAmount,
         'startDate': _selectedStartDate,
         'endDate': _selectedEndDate,
@@ -206,59 +208,9 @@ class _RentSareeScreenState extends State<RentSareeScreen>
 
       if (!mounted) return;
 
-      // Show success message
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.green.shade700,
-                size: 24.r,
-              ),
-              SizedBox(width: 8.w),
-              Text('Rental Request Sent'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your rental request has been sent successfully! The owner will review your request soon.',
-                style: TextStyle(fontSize: 14.sp),
-              ),
-              SizedBox(height: 12.h),
-              _buildRentalInfoRow('Rental Period:',
-                  '${DateFormat('MMM d, yyyy').format(_selectedStartDate)} - ${DateFormat('MMM d, yyyy').format(_selectedEndDate)}'),
-              SizedBox(height: 8.h),
-              _buildRentalInfoRow('Duration:', '$_rentalDuration days'),
-              SizedBox(height: 8.h),
-              _buildRentalInfoRow(
-                  'Total Amount:', '৳${(totalAmount).toStringAsFixed(2)}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      // Navigate directly to transaction history screen
+      Navigator.pushNamedAndRemoveUntil(
+          context, '/transaction_history', (route) => route.isFirst);
     } catch (e) {
       print('Rental error: $e');
       if (!mounted) return;
