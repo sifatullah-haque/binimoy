@@ -1,3 +1,4 @@
+import 'package:binimoy/screens/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
@@ -495,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
             child: BottomNavigationBar(
-              currentIndex: _selectedIndex > 1 ? 2 : _selectedIndex,
+              currentIndex: _selectedIndex,
               backgroundColor: Colors.transparent,
               elevation: 0,
               selectedItemColor: Colors.green.shade700,
@@ -513,6 +514,10 @@ class _HomeScreenState extends State<HomeScreen>
                   label: 'Post',
                 ),
                 BottomNavigationBarItem(
+                  icon: Icon(Icons.chat),
+                  label: 'Chat',
+                ),
+                BottomNavigationBarItem(
                   icon: Icon(Icons.person),
                   label: 'Profile',
                 ),
@@ -526,6 +531,11 @@ class _HomeScreenState extends State<HomeScreen>
                         builder: (context) => const AddPostScreen()),
                   );
                 } else if (index == 2) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Chat()),
+                  );
+                } else if (index == 3) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
