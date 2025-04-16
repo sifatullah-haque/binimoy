@@ -6,6 +6,8 @@ import 'dart:ui';
 import '../widgets/rental_calendar.dart';
 import '../widgets/review_dialog.dart';
 import '../screens/chat_screen.dart';
+import '../screens/buy_saree_screen.dart';
+import '../screens/rent_saree_screen.dart';
 
 class Review {
   final String id;
@@ -722,110 +724,20 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       return;
     }
 
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: CircularProgressIndicator(
-            color: Colors.green.shade700,
-          ),
-        ),
-      );
-
-      // Ensure saree ID exists
-      final String sareeId =
-          widget.saree['id'] ?? (widget.saree['documentId'] as String?) ?? '';
-
-      if (sareeId.isEmpty) {
-        throw Exception('Invalid saree ID');
-      }
-
-      // Create transaction document
-      final transactionRef =
-          await FirebaseFirestore.instance.collection('transactions').add({
-        'sareeId': sareeId,
-        'sareeName': widget.saree['name'] ?? 'Unknown',
-        'sareeImage': widget.saree['imageUrl'] ?? '',
-        'buyerId': user.uid,
-        'buyerName': user.displayName ?? 'Anonymous',
-        'sellerId': widget.saree['userId'] ?? '',
-        'sellerName': widget.saree['userName'] ?? 'Unknown',
-        'type': TransactionType.buy.toString(),
-        'status': TransactionStatus.pending.toString(),
-        'amount': widget.saree['price'] ?? 0.0,
-        'startDate': DateTime.now(),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // Update the saree document
-      await FirebaseFirestore.instance
-          .collection('sarees')
-          .doc(sareeId)
-          .update({
-        'isAvailable': false,
-        'lastTransactionId': transactionRef.id,
-      });
-
-      if (!mounted) return;
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      // Show success message
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.green.shade700,
-                size: 24.r,
-              ),
-              SizedBox(width: 8.w),
-              Text('Purchase Request Sent'),
-            ],
-          ),
-          content: Text(
-            'Your purchase request has been sent successfully! The seller will review your request soon.',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Return to previous screen
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      print('Transaction error: $e');
-      if (!mounted) return;
-
-      // Close loading dialog if open
-      Navigator.pop(context);
-
+    if (user.uid == widget.saree['userId']) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to process purchase. Please try again.'),
-          backgroundColor: Colors.red.shade400,
-        ),
+        const SnackBar(content: Text('You cannot buy your own saree')),
       );
+      return;
     }
+
+    // Navigate to the buy saree screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuySareeScreen(saree: widget.saree),
+      ),
+    );
   }
 
   Future<void> _handleRent() async {
@@ -844,179 +756,11 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       return;
     }
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30.r),
-            topRight: Radius.circular(30.r),
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(24.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Select Rental Dates',
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Choose your rental start and end dates',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              SizedBox(height: 24.h),
-              Expanded(
-                child: RentalCalendar(
-                  sareeId: widget.saree['id'],
-                  onDateSelected: (start, end) async {
-                    Navigator.pop(context);
-
-                    try {
-                      // Show loading indicator
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                      );
-
-                      final days = end.difference(start).inDays + 1;
-                      final amount =
-                          (widget.saree['price'] as num) * 0.1 * days;
-
-                      // Create rental transaction
-                      final transactionRef = await FirebaseFirestore.instance
-                          .collection('transactions')
-                          .add({
-                        'sareeId': widget.saree['id'],
-                        'sareeName': widget.saree['name'],
-                        'sareeImage': widget.saree['imageUrl'],
-                        'buyerId': user.uid,
-                        'buyerName': user.displayName ?? 'Anonymous',
-                        'sellerId': widget.saree['userId'],
-                        'sellerName': widget.saree['userName'],
-                        'type': TransactionType.rent.toString(),
-                        'status': TransactionStatus.pending.toString(),
-                        'amount': amount,
-                        'startDate': start,
-                        'endDate': end,
-                        'createdAt': FieldValue.serverTimestamp(),
-                      });
-
-                      // Update saree status
-                      await FirebaseFirestore.instance
-                          .collection('sarees')
-                          .doc(widget.saree['id'])
-                          .update({
-                        'rentalStatus': 'pending',
-                        'lastTransactionId': transactionRef.id,
-                      });
-
-                      if (!mounted) return;
-
-                      // Close loading dialog
-                      Navigator.pop(context);
-
-                      // Show success dialog
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          title: Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green.shade700,
-                                size: 24.r,
-                              ),
-                              SizedBox(width: 8.w),
-                              Text('Rental Request Sent'),
-                            ],
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Your rental request has been sent successfully!',
-                                style: TextStyle(fontSize: 14.sp),
-                              ),
-                              SizedBox(height: 12.h),
-                              _buildRentalInfoRow('Dates:',
-                                  '${start.day}/${start.month}/${start.year} - ${end.day}/${end.month}/${end.year}'),
-                              SizedBox(height: 8.h),
-                              _buildRentalInfoRow('Duration:', '$days days'),
-                              SizedBox(height: 8.h),
-                              _buildRentalInfoRow('Total Amount:',
-                                  '৳${amount.toStringAsFixed(2)}'),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.pop(context);
-                              },
-                              child: Text(
-                                'OK',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } catch (e) {
-                      print('Rental error: $e');
-                      if (!mounted) return;
-
-                      // Close loading dialog
-                      Navigator.pop(context);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Failed to process rental. Please try again.'),
-                          backgroundColor: Colors.red.shade400,
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+    // Navigate to the rent saree screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RentSareeScreen(saree: widget.saree),
       ),
     );
   }
