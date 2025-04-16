@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+import '../services/storage_service.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -31,6 +32,7 @@ class _AddPostScreenState extends State<AddPostScreen>
   late Animation<double> _fadeAnimation;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final _uuid = Uuid();
+  final _storageService = StorageService();
 
   // Upload progress tracking
   double _uploadProgress = 0;
@@ -82,63 +84,20 @@ class _AddPostScreenState extends State<AddPostScreen>
 
   Future<String> _uploadImage(File imageFile) async {
     try {
-      // Create a unique filename
-      final fileName = '${_uuid.v4()}${path.extension(imageFile.path)}';
-
-      // Create reference to the root
-      final storageRef = _storage.ref();
-
-      // Check if the images folder exists, if not create it
-      final imagesRef = storageRef.child('images');
-      final imageRef = imagesRef.child(fileName);
-
-      print('Starting Firebase upload to: images/$fileName');
-      print(
-          'File exists: ${imageFile.existsSync()}, Size: ${imageFile.lengthSync()} bytes');
-
-      // Set metadata
-      final contentType =
-          'image/${path.extension(imageFile.path).replaceFirst('.', '')}';
-      final metadata = SettableMetadata(
-        contentType: contentType,
-        customMetadata: {'source': 'Binimoy app'},
+      return await _storageService.uploadImage(
+        imageFile,
+        onProgress: (progress) {
+          setState(() {
+            _showProgress = true;
+            _uploadProgress = progress;
+          });
+        },
       );
-
-      // Start upload
-      final uploadTask = imageRef.putFile(imageFile, metadata);
-
-      // Show progress in UI
-      setState(() => _showProgress = true);
-
-      // Listen to upload progress
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        setState(() {
-          _uploadProgress = snapshot.bytesTransferred / snapshot.totalBytes;
-        });
-        print(
-            'Upload progress: ${(_uploadProgress * 100).toStringAsFixed(2)}%');
-      }, onError: (e) {
-        print('Upload stream error: $e');
-      });
-
-      // Wait for upload to complete
-      final snapshot = await uploadTask;
-      print('Upload complete with state: ${snapshot.state}');
-
-      // Hide progress in UI
-      setState(() => _showProgress = false);
-
-      // Get download URL
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-      print('Firebase upload successful, URL: $downloadUrl');
-      return downloadUrl;
     } catch (e) {
-      setState(() => _showProgress = false);
       print('Error uploading image: $e');
-      if (e is FirebaseException) {
-        print('Firebase error code: ${e.code}, message: ${e.message}');
-      }
       throw Exception('Failed to upload image: ${e.toString()}');
+    } finally {
+      setState(() => _showProgress = false);
     }
   }
 
@@ -204,7 +163,7 @@ class _AddPostScreenState extends State<AddPostScreen>
         throw Exception('Invalid image file: File does not exist or is empty');
       }
 
-      // Upload image to Firebase Storage directly
+      // Use new upload method
       final imageUrl = await _uploadImage(_imageFile!);
 
       // Save post data to Firestore
