@@ -1,4 +1,5 @@
 import 'package:binimoy/screens/transaction_history_screen.dart';
+import 'package:binimoy/screens/add_post_screen.dart'; // Add this import
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -64,6 +65,8 @@ class MyApp extends StatelessWidget {
                 CheckAuthStatus(authService: authService),
             '/transaction_history': (context) =>
                 const TransactionHistoryScreen(),
+            '/add-post': (context) =>
+                const AddPostScreen(), // Add the missing route
           },
           // Add navigation observer for debugging
           navigatorObservers: [

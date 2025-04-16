@@ -8,6 +8,7 @@ import '../widgets/review_dialog.dart';
 import '../screens/chat_screen.dart';
 import '../screens/buy_saree_screen.dart';
 import '../screens/rent_saree_screen.dart';
+import '../screens/swap_saree_screen.dart';
 
 class Review {
   final String id;
@@ -376,13 +377,7 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
                                   title: 'Swap',
                                   icon: Icons.swap_horiz,
                                   color: Colors.blue.shade700,
-                                  onTap: () {
-                                    // TODO: Implement swap
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text(
-                                                'Swap feature coming soon!')));
-                                  },
+                                  onTap: _handleSwap,
                                 ),
                               ],
                             ),
@@ -760,6 +755,31 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       context,
       MaterialPageRoute(
         builder: (context) => RentSareeScreen(saree: widget.saree),
+      ),
+    );
+  }
+
+  Future<void> _handleSwap() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to swap')),
+      );
+      return;
+    }
+
+    if (user.uid == widget.saree['userId']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot swap your own saree')),
+      );
+      return;
+    }
+
+    // Navigate to the swap saree screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SwapSaree(saree: widget.saree),
       ),
     );
   }

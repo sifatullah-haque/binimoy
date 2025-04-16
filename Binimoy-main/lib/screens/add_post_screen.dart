@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -5,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../services/storage_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -21,12 +24,17 @@ class _AddPostScreenState extends State<AddPostScreen>
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _picker = ImagePicker();
-  final _storageService = StorageService();
   File? _imageFile;
   bool _isLoading = false;
   String _selectedType = 'Jamdani'; // Default value
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final _uuid = Uuid();
+
+  // Upload progress tracking
+  double _uploadProgress = 0;
+  bool _showProgress = false;
 
   final List<String> _sareeTypes = [
     'Jamdani',
@@ -72,6 +80,68 @@ class _AddPostScreenState extends State<AddPostScreen>
     }
   }
 
+  Future<String> _uploadImage(File imageFile) async {
+    try {
+      // Create a unique filename
+      final fileName = '${_uuid.v4()}${path.extension(imageFile.path)}';
+
+      // Create reference to the root
+      final storageRef = _storage.ref();
+
+      // Check if the images folder exists, if not create it
+      final imagesRef = storageRef.child('images');
+      final imageRef = imagesRef.child(fileName);
+
+      print('Starting Firebase upload to: images/$fileName');
+      print(
+          'File exists: ${imageFile.existsSync()}, Size: ${imageFile.lengthSync()} bytes');
+
+      // Set metadata
+      final contentType =
+          'image/${path.extension(imageFile.path).replaceFirst('.', '')}';
+      final metadata = SettableMetadata(
+        contentType: contentType,
+        customMetadata: {'source': 'Binimoy app'},
+      );
+
+      // Start upload
+      final uploadTask = imageRef.putFile(imageFile, metadata);
+
+      // Show progress in UI
+      setState(() => _showProgress = true);
+
+      // Listen to upload progress
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        setState(() {
+          _uploadProgress = snapshot.bytesTransferred / snapshot.totalBytes;
+        });
+        print(
+            'Upload progress: ${(_uploadProgress * 100).toStringAsFixed(2)}%');
+      }, onError: (e) {
+        print('Upload stream error: $e');
+      });
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+      print('Upload complete with state: ${snapshot.state}');
+
+      // Hide progress in UI
+      setState(() => _showProgress = false);
+
+      // Get download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      print('Firebase upload successful, URL: $downloadUrl');
+      return downloadUrl;
+    } catch (e) {
+      setState(() => _showProgress = false);
+      print('Error uploading image: $e');
+      if (e is FirebaseException) {
+        print('Firebase error code: ${e.code}, message: ${e.message}');
+      }
+      throw Exception('Failed to upload image: ${e.toString()}');
+    }
+  }
+
   Future<void> _submitPost() async {
     // Validate form and image
     if (!_formKey.currentState!.validate()) {
@@ -105,6 +175,20 @@ class _AddPostScreenState extends State<AddPostScreen>
     if (!mounted) return;
     setState(() => _isLoading = true);
 
+    // Add a timeout to prevent infinite loading state
+    Timer? timeoutTimer;
+    timeoutTimer = Timer(Duration(seconds: 60), () {
+      if (_isLoading && mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Request timed out. Please try again.'),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    });
+
     try {
       // Get current user
       final user = FirebaseAuth.instance.currentUser;
@@ -112,10 +196,19 @@ class _AddPostScreenState extends State<AddPostScreen>
         throw Exception('User not logged in');
       }
 
-      // Upload image to Cloudinary
-      final imageUrl = await _storageService.uploadImage(_imageFile!);
+      print('Starting to upload saree post...');
+      print('Image path: ${_imageFile!.path}');
+
+      // Validate image file before uploading
+      if (!await _imageFile!.exists() || await _imageFile!.length() == 0) {
+        throw Exception('Invalid image file: File does not exist or is empty');
+      }
+
+      // Upload image to Firebase Storage directly
+      final imageUrl = await _uploadImage(_imageFile!);
 
       // Save post data to Firestore
+      print('Saving data to Firestore...');
       await FirebaseFirestore.instance.collection('sarees').add({
         'name': _nameController.text.trim(),
         'price': price,
@@ -128,7 +221,15 @@ class _AddPostScreenState extends State<AddPostScreen>
         'isAvailable': true,
       });
 
+      print('Post saved to Firestore successfully');
+
+      // Cancel the timeout timer
+      timeoutTimer?.cancel();
+
       if (!mounted) return;
+
+      // Reset loading state before navigating
+      setState(() => _isLoading = false);
 
       // Show success message and pop screen
       Navigator.pop(context);
@@ -139,18 +240,28 @@ class _AddPostScreenState extends State<AddPostScreen>
         ),
       );
     } catch (e) {
+      // Cancel the timeout timer
+      timeoutTimer?.cancel();
+
       print('Error posting saree: $e');
       if (!mounted) return;
+
+      // Reset loading state
+      setState(() => _isLoading = false);
+
+      // Show error message with more details
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to post saree: ${e.toString()}'),
+          content: Text('Upload failed: ${e.toString().split('\n')[0]}'),
           backgroundColor: Colors.red.shade400,
+          duration: Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'RETRY',
+            textColor: Colors.white,
+            onPressed: _submitPost,
+          ),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
     }
   }
 
@@ -212,7 +323,18 @@ class _AddPostScreenState extends State<AddPostScreen>
                   padding:
                       EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                   child: Row(
-                    children: [],
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Share your beautiful saree with others',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -464,6 +586,34 @@ class _AddPostScreenState extends State<AddPostScreen>
                                 ),
                               ),
                               SizedBox(height: 32.h),
+
+                              // Upload progress indicator
+                              if (_showProgress)
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Uploading image: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                                        style: TextStyle(
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      LinearProgressIndicator(
+                                        value: _uploadProgress,
+                                        backgroundColor: Colors.grey.shade200,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.green.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
 
                               // Submit button
                               AnimatedContainer(
