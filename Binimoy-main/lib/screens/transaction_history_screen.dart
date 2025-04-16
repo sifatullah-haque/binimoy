@@ -3,9 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/transaction.dart';
 
-class TransactionHistoryScreen extends StatelessWidget {
+class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
 
+  @override
+  State<TransactionHistoryScreen> createState() =>
+      _TransactionHistoryScreenState();
+}
+
+class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   String _getStatusColor(TransactionStatus status) {
     switch (status) {
       case TransactionStatus.pending:
@@ -24,9 +30,21 @@ class TransactionHistoryScreen extends StatelessWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Transaction History'),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Transaction History',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: StreamBuilder<firestore.QuerySnapshot>(
         stream: firestore.FirebaseFirestore.instance
@@ -78,7 +96,8 @@ class TransactionHistoryScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text('Type: ${transaction.type.toString().split('.').last}'),
+                      Text(
+                          'Type: ${transaction.type.toString().split('.').last}'),
                       if (transaction.type == TransactionType.rent)
                         Text(
                           'Duration: ${transaction.startDate.toString().split(' ')[0]} - ${transaction.endDate?.toString().split(' ')[0] ?? 'N/A'}',
@@ -93,7 +112,8 @@ class TransactionHistoryScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Color(
                         int.parse(
-                          _getStatusColor(transaction.status).replaceAll('#', '0xFF'),
+                          _getStatusColor(transaction.status)
+                              .replaceAll('#', '0xFF'),
                         ),
                       ),
                       borderRadius: BorderRadius.circular(12),

@@ -39,8 +39,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
       // Apply search text
       if (_searchController.text.isNotEmpty) {
-        query = query.where('name', isGreaterThanOrEqualTo: _searchController.text)
-                    .where('name', isLessThan: _searchController.text + 'z');
+        query = query
+            .where('name', isGreaterThanOrEqualTo: _searchController.text)
+            .where('name', isLessThan: _searchController.text + 'z');
       }
 
       // Apply type filter
@@ -49,8 +50,9 @@ class _SearchScreenState extends State<SearchScreen> {
       }
 
       // Apply price range
-      query = query.where('price', isGreaterThanOrEqualTo: _priceRange.start)
-                  .where('price', isLessThanOrEqualTo: _priceRange.end);
+      query = query
+          .where('price', isGreaterThanOrEqualTo: _priceRange.start)
+          .where('price', isLessThanOrEqualTo: _priceRange.end);
 
       // Apply sorting
       switch (_sortBy) {
@@ -79,8 +81,14 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: TextField(
           controller: _searchController,
           style: const TextStyle(color: Colors.white),
@@ -159,7 +167,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         ? const Center(child: Text('No results found'))
                         : GridView.builder(
                             padding: const EdgeInsets.all(8),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               childAspectRatio: 0.75,
                               crossAxisSpacing: 10,
@@ -168,7 +177,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             itemCount: _searchResults!.length,
                             itemBuilder: (context, index) {
                               final saree = {
-                                ..._searchResults![index].data() as Map<String, dynamic>,
+                                ..._searchResults![index].data()
+                                    as Map<String, dynamic>,
                                 'id': _searchResults![index].id,
                               };
 
@@ -176,13 +186,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => SareeDetailScreen(saree: saree),
+                                    builder: (context) =>
+                                        SareeDetailScreen(saree: saree),
                                   ),
                                 ),
                                 child: Card(
                                   elevation: 2,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Image.network(
@@ -194,11 +206,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               saree['name'] ?? 'Unknown',
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
