@@ -784,8 +784,8 @@ class _HomeScreenState extends State<HomeScreen>
                     isSelected: _selectedIndex == 1,
                   ),
                   _buildNavItem(
-                    icon: Icons.shopping_bag,
-                    label: 'Rentals',
+                    icon: Icons.message_outlined,
+                    label: 'Messages',
                     index: 2,
                     isSelected: _selectedIndex == 2,
                   ),
