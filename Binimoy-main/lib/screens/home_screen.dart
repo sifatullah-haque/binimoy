@@ -28,6 +28,9 @@ class _HomeScreenState extends State<HomeScreen>
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  bool _isDisposed = false;
+
   String _selectedCategory = 'RENT';
   final List<String> _categories = [
     'RENT',
@@ -44,11 +47,15 @@ class _HomeScreenState extends State<HomeScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    _animationController.forward();
+
+    if (!_isDisposed && mounted) {
+      _animationController.forward();
+    }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _animationController.dispose();
     super.dispose();
   }

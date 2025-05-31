@@ -13,7 +13,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,12 +23,38 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   String? _errorMessage;
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
   // Add timeout duration for network operations
   final Duration _timeout = const Duration(seconds: 15);
 
   @override
   void initState() {
     super.initState();
+    
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.8, curve: Curves.easeOut),
+      ),
+    );
+    
+    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutBack),
+      ),
+    );
+    
+    _animationController.forward();
+    
     // Check if user is already signed in
     _checkCurrentUser();
   }
@@ -68,9 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Password reset email sent. Please check your inbox.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -185,346 +214,450 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Colors.green.shade800,
-              Colors.teal.shade600,
-            ],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpg'),
+            fit: BoxFit.cover,
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // App Title
-              Padding(
-                padding: EdgeInsets.all(16.0.r),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_bag_outlined,
-                        color: Colors.white, size: 28.r),
-                    SizedBox(width: 8.w),
-                    Text(
-                      'Binimoy',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Main content
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.0.w),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(24.r),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.15),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 12.r,
-                              offset: Offset(0, 4.h),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24.r),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Padding(
-                              padding: EdgeInsets.all(28.0.r),
-                              child: Form(
-                                key: _formKey,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    // Logo or icon
-                                    Container(
-                                      padding: EdgeInsets.all(16.r),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.account_balance_wallet,
-                                        size: 48.r,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 24.h),
-
-                                    // Welcome text
-                                    Text(
-                                      'Welcome Back',
-                                      style: TextStyle(
-                                        fontSize: 26.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      'Sign in to continue',
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        color: Colors.white.withOpacity(0.7),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 32.h),
-
-                                    // Error message display
-                                    if (_errorMessage != null) ...[
-                                      SizedBox(height: 16.h),
-                                      Container(
-                                        padding: EdgeInsets.all(12.r),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(12.r),
-                                          border: Border.all(
-                                            color: Colors.red.withOpacity(0.3),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _errorMessage!,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                      SizedBox(height: 16.h),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Transform.translate(
+                    offset: Offset(0, _slideAnimation.value),
+                    child: Column(
+                      children: [
+                        // App Header
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+                          child: Column(
+                            children: [
+                              // App Logo/Icon
+                              Container(
+                                width: 80.r,
+                                height: 80.r,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withOpacity(0.3),
+                                      Colors.white.withOpacity(0.1),
                                     ],
-
-                                    // Email field
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(16.r),
-                                      ),
-                                      child: TextFormField(
-                                        controller: _emailController,
-                                        style: TextStyle(color: Colors.white),
-                                        decoration: InputDecoration(
-                                          hintText: 'Email',
-                                          hintStyle: TextStyle(
-                                              color: Colors.white
-                                                  .withOpacity(0.7)),
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 20.w,
-                                            vertical: 16.h,
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.email_outlined,
-                                            color:
-                                                Colors.white.withOpacity(0.7),
-                                            size: 20.r,
-                                          ),
-                                          border: InputBorder.none,
-                                          errorStyle: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12.sp,
-                                          ),
-                                        ),
-                                        keyboardType:
-                                            TextInputType.emailAddress,
-                                        validator: (value) =>
-                                            value?.isEmpty ?? true
-                                                ? 'Email is required'
-                                                : null,
-                                      ),
-                                    ),
-                                    SizedBox(height: 20.h),
-
-                                    // Password field
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(16.r),
-                                      ),
-                                      child: TextFormField(
-                                        controller: _passwordController,
-                                        style: TextStyle(color: Colors.white),
-                                        decoration: InputDecoration(
-                                          hintText: 'Password',
-                                          hintStyle: TextStyle(
-                                              color: Colors.white
-                                                  .withOpacity(0.7)),
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 20.w,
-                                            vertical: 16.h,
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.lock_outline,
-                                            color:
-                                                Colors.white.withOpacity(0.7),
-                                            size: 20.r,
-                                          ),
-                                          suffixIcon: IconButton(
-                                            icon: Icon(
-                                              _obscurePassword
-                                                  ? Icons
-                                                      .visibility_off_outlined
-                                                  : Icons.visibility_outlined,
-                                              color:
-                                                  Colors.white.withOpacity(0.7),
-                                              size: 20.r,
-                                            ),
-                                            onPressed: () {
-                                              setState(() {
-                                                _obscurePassword =
-                                                    !_obscurePassword;
-                                              });
-                                            },
-                                          ),
-                                          border: InputBorder.none,
-                                          errorStyle: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12.sp,
-                                          ),
-                                        ),
-                                        obscureText: _obscurePassword,
-                                        validator: (value) =>
-                                            value?.isEmpty ?? true
-                                                ? 'Password is required'
-                                                : null,
-                                      ),
-                                    ),
-                                    SizedBox(height: 12.h),
-
-                                    // Forgot password
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed:
-                                            _isLoading ? null : _resetPassword,
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.white,
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size(50.w, 36.h),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            color:
-                                                Colors.white.withOpacity(0.8),
-                                            fontSize: 14.sp,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 32.h),
-
-                                    // Login button
-                                    ElevatedButton(
-                                      onPressed:
-                                          _isLoading ? null : _handleLogin,
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.green.shade700,
-                                        backgroundColor: Colors.white,
-                                        padding: EdgeInsets.symmetric(
-                                            vertical: 16.h),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16.r),
-                                        ),
-                                        elevation: 0,
-                                        disabledBackgroundColor:
-                                            Colors.white.withOpacity(0.5),
-                                      ),
-                                      child: _isLoading
-                                          ? SizedBox(
-                                              height: 20.r,
-                                              width: 20.r,
-                                              child: CircularProgressIndicator(
-                                                color: Colors.green.shade700,
-                                                strokeWidth: 2.5,
-                                              ),
-                                            )
-                                          : Text(
-                                              'Sign In',
-                                              style: TextStyle(
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                    ),
-                                    SizedBox(height: 24.h),
-
-                                    // Register link
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Don\'t have an account?',
-                                          style: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.7),
-                                            fontSize: 14.sp,
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () => Navigator.pushNamed(
-                                              context, '/register'),
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 8.w),
-                                          ),
-                                          child: Text(
-                                            'Register',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                              fontSize: 14.sp,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.4),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      spreadRadius: 5,
                                     ),
                                   ],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 40.r,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 20.h),
+                              
+                              // App Name
+                              Text(
+                                'Binimoy',
+                                style: TextStyle(
+                                  fontSize: 32.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 2.0,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              
+                              // Tagline
+                              Text(
+                                'RENT • SELL • SWAP • REPEAT',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Main Content with Glass Effect
+                        Expanded(
+                          child: Container(
+                            margin: EdgeInsets.symmetric(horizontal: 20.w),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30.r),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(30.r),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(30.r),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.2),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: SingleChildScrollView(
+                                    padding: EdgeInsets.all(30.r),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          SizedBox(height: 20.h),
+                                          
+                                          // Welcome Text
+                                          Text(
+                                            'Welcome Back',
+                                            style: TextStyle(
+                                              fontSize: 28.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 8.h),
+                                          Text(
+                                            'Sign in to continue your saree journey',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 40.h),
+
+                                          // Error Message
+                                          if (_errorMessage != null) ...[
+                                            Container(
+                                              padding: EdgeInsets.all(16.r),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(16.r),
+                                                border: Border.all(
+                                                  color: Colors.red.withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.white,
+                                                    size: 20.r,
+                                                  ),
+                                                  SizedBox(width: 12.w),
+                                                  Expanded(
+                                                    child: Text(
+                                                      _errorMessage!,
+                                                      style: TextStyle(
+                                                        fontSize: 14.sp,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(height: 24.h),
+                                          ],
+
+                                          // Email Field
+                                          _buildGlassTextField(
+                                            controller: _emailController,
+                                            labelText: 'Email Address',
+                                            hintText: 'Enter your email',
+                                            prefixIcon: Icons.email_outlined,
+                                            keyboardType: TextInputType.emailAddress,
+                                            validator: (value) => value?.isEmpty ?? true 
+                                              ? 'Email is required' 
+                                              : null,
+                                          ),
+                                          SizedBox(height: 20.h),
+
+                                          // Password Field
+                                          _buildGlassTextField(
+                                            controller: _passwordController,
+                                            labelText: 'Password',
+                                            hintText: 'Enter your password',
+                                            prefixIcon: Icons.lock_outline,
+                                            isPassword: true,
+                                            obscureText: _obscurePassword,
+                                            onToggleVisibility: () {
+                                              setState(() {
+                                                _obscurePassword = !_obscurePassword;
+                                              });
+                                            },
+                                            validator: (value) => value?.isEmpty ?? true 
+                                              ? 'Password is required' 
+                                              : null,
+                                          ),
+                                          SizedBox(height: 16.h),
+
+                                          // Forgot Password
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: GestureDetector(
+                                              onTap: _isLoading ? null : _resetPassword,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 16.w, 
+                                                  vertical: 8.h
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(12.r),
+                                                  border: Border.all(
+                                                    color: Colors.white.withOpacity(0.2),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'Forgot Password?',
+                                                  style: TextStyle(
+                                                    fontSize: 13.sp,
+                                                    color: Colors.white.withOpacity(0.9),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(height: 40.h),
+
+                                          // Login Button
+                                          Container(
+                                            height: 56.h,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(16.r),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(16.r),
+                                              child: BackdropFilter(
+                                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                                child: ElevatedButton(
+                                                  onPressed: _isLoading ? null : _handleLogin,
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.white.withOpacity(0.2),
+                                                    foregroundColor: Colors.white,
+                                                    elevation: 0,
+                                                    shadowColor: Colors.transparent,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(16.r),
+                                                      side: BorderSide(
+                                                        color: Colors.white.withOpacity(0.3),
+                                                        width: 1.5,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: _isLoading
+                                                      ? SizedBox(
+                                                          height: 24.r,
+                                                          width: 24.r,
+                                                          child: CircularProgressIndicator(
+                                                            color: Colors.white,
+                                                            strokeWidth: 2.5,
+                                                          ),
+                                                        )
+                                                      : Row(
+                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          children: [
+                                                            Icon(Icons.login, size: 20.r),
+                                                            SizedBox(width: 8.w),
+                                                            Text(
+                                                              'Sign In',
+                                                              style: TextStyle(
+                                                                fontSize: 16.sp,
+                                                                fontWeight: FontWeight.bold,
+                                                                letterSpacing: 0.5,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(height: 30.h),
+
+                                          // Register Link
+                                          Container(
+                                            padding: EdgeInsets.all(16.r),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.05),
+                                              borderRadius: BorderRadius.circular(16.r),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(0.2),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  'Don\'t have an account? ',
+                                                  style: TextStyle(
+                                                    color: Colors.white.withOpacity(0.8),
+                                                    fontSize: 14.sp,
+                                                  ),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () => Navigator.pushNamed(context, '/register'),
+                                                  child: Text(
+                                                    'Register',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                      fontSize: 14.sp,
+                                                      decoration: TextDecoration.underline,
+                                                      decorationColor: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 20.h),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        SizedBox(height: 20.h),
+                      ],
                     ),
                   ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    required IconData prefixIcon,
+    TextInputType? keyboardType,
+    bool isPassword = false,
+    bool? obscureText,
+    VoidCallback? onToggleVisibility,
+    required String? Function(String?) validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: TextFormField(
+              controller: controller,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15.sp,
+              ),
+              decoration: InputDecoration(
+                labelText: labelText,
+                labelStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+                hintText: hintText,
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                ),
+                prefixIcon: Icon(
+                  prefixIcon,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 20.r,
+                ),
+                suffixIcon: isPassword
+                    ? IconButton(
+                        icon: Icon(
+                          obscureText ?? false
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 20.r,
+                        ),
+                        onPressed: onToggleVisibility,
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 20.h,
+                  horizontal: 16.w,
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                errorStyle: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12.sp,
                 ),
               ),
-            ],
+              keyboardType: keyboardType,
+              obscureText: obscureText ?? false,
+              validator: validator,
+            ),
           ),
         ),
       ),
@@ -535,6 +668,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 }

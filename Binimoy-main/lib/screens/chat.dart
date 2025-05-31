@@ -13,6 +13,8 @@ class _ChatState extends State<Chat> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  bool _isDisposed = false;
+
   // Dummy chat data
   final List<Map<String, dynamic>> _chats = [
     {
@@ -76,11 +78,15 @@ class _ChatState extends State<Chat> with SingleTickerProviderStateMixin {
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    _animationController.forward();
+
+    if (!_isDisposed && mounted) {
+      _animationController.forward();
+    }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _animationController.dispose();
     super.dispose();
   }
