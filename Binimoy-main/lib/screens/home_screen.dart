@@ -28,14 +28,8 @@ class _HomeScreenState extends State<HomeScreen>
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  String _selectedCategory = 'All';
-  final List<String> _categories = [
-    'All',
-    'New Arrivals',
-    'Popular',
-    'Discounts',
-    'Traditional'
-  ];
+  String _selectedCategory = 'RENT';
+  final List<String> _categories = ['RENT', 'RESALE'];
 
   @override
   void initState() {
@@ -93,29 +87,30 @@ class _HomeScreenState extends State<HomeScreen>
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
+                color: Colors.brown.withOpacity(0.2),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.green.shade800.withOpacity(0.3),
-                    Colors.teal.shade600.withOpacity(0.3),
+                    Colors.brown.shade800.withOpacity(0.3),
+                    Colors.brown.shade600.withOpacity(0.3),
                   ],
                 ),
               ),
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Binimoy',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
+            fontSize: 20.sp,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
+            icon: Icon(Icons.search, color: Colors.white, size: 22.r),
             onPressed: () {
               Navigator.push(
                 context,
@@ -124,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.receipt_long, color: Colors.white),
+            icon: Icon(Icons.receipt_long, color: Colors.white, size: 22.r),
             onPressed: () {
               Navigator.push(
                 context,
@@ -137,340 +132,352 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade800,
-              Colors.teal.shade600,
-            ],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpg'),
+            fit: BoxFit.cover,
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Welcome message
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                child: Row(
-                  children: [
-                    Text(
-                      'Welcome to Binimoy',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        'Explore',
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.brown.shade800.withOpacity(0.7),
+                Colors.brown.shade600.withOpacity(0.8),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Welcome message and RENT/RESALE buttons
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  child: Column(
+                    children: [
+                      Text(
+                        'RENT | SELL | SWAP | REPEAT',
                         style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.0,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Categories
-              SizedBox(height: 10.h),
-              SizedBox(
-                height: 40.h,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final isSelected = category == _selectedCategory;
-
-                    return Padding(
-                      padding: EdgeInsets.only(right: 8.w),
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.green.shade800
-                                  : Colors.white,
-                              fontSize: 14.sp,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(height: 16.h),
-
-              // Main content
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30.r),
-                      topRight: Radius.circular(30.r),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30.r),
-                      topRight: Radius.circular(30.r),
-                    ),
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: _firestore
-                            .collection('sarees')
-                            .orderBy('createdAt', descending: true)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: Text('Error: ${snapshot.error}'),
-                            );
-                          }
-
-                          final sarees = snapshot.data?.docs ?? [];
-
-                          if (sarees.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/no_posts.png',
-                                    height: 120.h,
-                                    width: 120.w,
+                      SizedBox(height: 16.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = 'RENT';
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                decoration: BoxDecoration(
+                                  color: _selectedCategory == 'RENT'
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1.5,
                                   ),
-                                  SizedBox(height: 16.h),
-                                  Text(
-                                    'No Sarees Available',
-                                    style: TextStyle(
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green.shade800,
-                                    ),
+                                ),
+                                child: Text(
+                                  'RENT',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _selectedCategory == 'RENT'
+                                        ? Colors.brown.shade800
+                                        : Colors.white,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
                                   ),
-                                  SizedBox(height: 8.h),
-                                  Text(
-                                    'Be the first to post a saree!',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14.sp,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            );
-                          }
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = 'RESALE';
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                decoration: BoxDecoration(
+                                  color: _selectedCategory == 'RESALE'
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  'RESALE',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _selectedCategory == 'RESALE'
+                                        ? Colors.brown.shade800
+                                        : Colors.white,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
 
-                          return Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16.w, vertical: 16.h),
-                            child: MasonryGridView.count(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16.h,
-                              crossAxisSpacing: 16.w,
-                              itemCount: sarees.length,
-                              itemBuilder: (context, index) {
-                                final saree = {
-                                  ...sarees[index].data()
-                                      as Map<String, dynamic>,
-                                  'id': sarees[index].id,
-                                };
+                // Main content
+                Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(top: 12.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(25.r),
+                        topRight: Radius.circular(25.r),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(25.r),
+                        topRight: Radius.circular(25.r),
+                      ),
+                      child: FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: _firestore
+                              .collection('sarees')
+                              .orderBy('createdAt', descending: true)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
 
-                                // Create alternating heights for visual interest
-                                final isEvenIndex = index % 2 == 0;
-                                final extraHeight = isEvenIndex ? 30.0 : 0.0;
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Text('Error: ${snapshot.error}'),
+                              );
+                            }
 
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            SareeDetailScreen(saree: saree),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.08),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
+                            final sarees = snapshot.data?.docs ?? [];
+
+                            if (sarees.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'assets/no_posts.png',
+                                      height: 100.h,
+                                      width: 100.w,
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Image with rounded corners at top
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(16.r),
-                                            topRight: Radius.circular(16.r),
+                                    SizedBox(height: 12.h),
+                                    Text(
+                                      'No Sarees Available',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.brown.shade800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 6.h),
+                                    Text(
+                                      'Be the first to post a saree!',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w, vertical: 12.h),
+                              child: MasonryGridView.count(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 12.h,
+                                crossAxisSpacing: 12.w,
+                                itemCount: sarees.length,
+                                itemBuilder: (context, index) {
+                                  final saree = {
+                                    ...sarees[index].data()
+                                        as Map<String, dynamic>,
+                                    'id': sarees[index].id,
+                                  };
+
+                                  // Create alternating heights for visual interest
+                                  final isEvenIndex = index % 2 == 0;
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              SareeDetailScreen(saree: saree),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(12.r),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.brown.withOpacity(0.1),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
                                           ),
-                                          child: AspectRatio(
-                                            aspectRatio:
-                                                0.8 + (isEvenIndex ? 0.1 : 0),
-                                            child: Image.network(
-                                              saree['imageUrl'] ?? '',
-                                              fit: BoxFit.cover,
-                                              loadingBuilder: (context, child,
-                                                  loadingProgress) {
-                                                if (loadingProgress == null)
-                                                  return child;
-                                                return Center(
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    value: loadingProgress
-                                                                .expectedTotalBytes !=
-                                                            null
-                                                        ? loadingProgress
-                                                                .cumulativeBytesLoaded /
-                                                            loadingProgress
-                                                                .expectedTotalBytes!
-                                                        : null,
-                                                  ),
-                                                );
-                                              },
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Container(
-                                                  color: Colors.grey.shade200,
-                                                  child: Icon(
-                                                    Icons.image_not_supported,
-                                                    color: Colors.grey.shade400,
-                                                    size: 50.r,
-                                                  ),
-                                                );
-                                              },
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Image with rounded corners at top
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(12.r),
+                                              topRight: Radius.circular(12.r),
+                                            ),
+                                            child: AspectRatio(
+                                              aspectRatio:
+                                                  0.8 + (isEvenIndex ? 0.1 : 0),
+                                              child: Image.network(
+                                                saree['imageUrl'] ?? '',
+                                                fit: BoxFit.cover,
+                                                loadingBuilder: (context, child,
+                                                    loadingProgress) {
+                                                  if (loadingProgress == null)
+                                                    return child;
+                                                  return Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      value: loadingProgress
+                                                                  .expectedTotalBytes !=
+                                                              null
+                                                          ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              loadingProgress
+                                                                  .expectedTotalBytes!
+                                                          : null,
+                                                    ),
+                                                  );
+                                                },
+                                                errorBuilder: (context, error,
+                                                    stackTrace) {
+                                                  return Container(
+                                                    color: Colors.grey.shade200,
+                                                    child: Icon(
+                                                      Icons.image_not_supported,
+                                                      color:
+                                                          Colors.grey.shade400,
+                                                      size: 40.r,
+                                                    ),
+                                                  );
+                                                },
+                                              ),
                                             ),
                                           ),
-                                        ),
 
-                                        // Saree details
-                                        Padding(
-                                          padding: EdgeInsets.all(12.r),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                saree['name'] ?? 'Unknown',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16.sp,
-                                                  color: Colors.black87,
+                                          // Saree details
+                                          Padding(
+                                            padding: EdgeInsets.all(10.r),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  saree['name'] ?? 'Unknown',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14.sp,
+                                                    color: Colors.black87,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              SizedBox(height: 4.h),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                      horizontal: 8.w,
-                                                      vertical: 4.h,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          Colors.green.shade50,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8.r),
-                                                    ),
-                                                    child: Text(
-                                                      '৳${saree['price'] ?? 0}',
-                                                      style: TextStyle(
+                                                SizedBox(height: 4.h),
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                        horizontal: 6.w,
+                                                        vertical: 3.h,
+                                                      ),
+                                                      decoration: BoxDecoration(
                                                         color: Colors
-                                                            .green.shade700,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 14.sp,
+                                                            .brown.shade50,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6.r),
+                                                      ),
+                                                      child: Text(
+                                                        '৳${saree['price'] ?? 0}',
+                                                        style: TextStyle(
+                                                          color: Colors
+                                                              .brown.shade700,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 12.sp,
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                                  const Spacer(),
-                                                  Icon(
-                                                    Icons.favorite_border,
-                                                    size: 18.r,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                                    const Spacer(),
+                                                    Icon(
+                                                      Icons.favorite_border,
+                                                      size: 16.r,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -499,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen>
               currentIndex: _selectedIndex,
               backgroundColor: Colors.transparent,
               elevation: 0,
-              selectedItemColor: Colors.green.shade700,
+              selectedItemColor: Colors.brown.shade700,
               unselectedItemColor: Colors.grey.shade600,
               showSelectedLabels: true,
               showUnselectedLabels: true,
@@ -511,11 +518,11 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.add_circle_outline),
-                  label: 'Post',
+                  label: 'List',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.chat),
-                  label: 'Chat',
+                  icon: Icon(Icons.shopping_bag),
+                  label: 'Rentals',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person),
