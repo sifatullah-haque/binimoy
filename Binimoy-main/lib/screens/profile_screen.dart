@@ -40,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
-    _refreshUserData(); // Use the new method instead of just _loadPostsCount
+    _refreshUserData();
   }
 
   Future<void> _loadPostsCount() async {
@@ -256,164 +256,212 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpg'),
+            fit: BoxFit.cover,
+          ),
         ),
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.green.shade800.withOpacity(0.3),
-                    Colors.teal.shade600.withOpacity(0.3),
-                  ],
-                ),
-              ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
+              ],
             ),
           ),
-        ),
-        title: Text(
-          'Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit, color: Colors.white),
-            onPressed: _editProfile,
-          ),
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.white),
-            onPressed: () async {
-              try {
-                await widget.authService.signOut();
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context, '/login');
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to sign out'),
-                    backgroundColor: Colors.red.shade400,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade800,
-              Colors.teal.shade600,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await _refreshUserData();
-              },
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
               child: Column(
                 children: [
-                  // User profile section
-                  SizedBox(height: 20.h),
-                  _buildProfileHeader(),
-                  SizedBox(height: 30.h),
+                  // Custom App Bar
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back,
+                              color: Colors.white, size: 24.r),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Profile',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 20.sp,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon:
+                              Icon(Icons.edit, color: Colors.white, size: 24.r),
+                          onPressed: _editProfile,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.logout,
+                              color: Colors.white, size: 24.r),
+                          onPressed: () async {
+                            try {
+                              await widget.authService.signOut();
+                              if (!mounted) return;
+                              Navigator.pushReplacementNamed(context, '/login');
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to sign out'),
+                                  backgroundColor: Colors.red.shade400,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
 
-                  // Main content
+                  // Subtitle
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Manage your saree collection and profile',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // Profile Header with Glass Effect
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 16.w),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          padding: EdgeInsets.all(20.r),
+                          child: _buildProfileHeader(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // Main Content with Glass Effect
                   Expanded(
                     child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 16.w),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30.r),
-                          topRight: Radius.circular(30.r),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, -2),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(24.r),
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30.r),
-                          topRight: Radius.circular(30.r),
-                        ),
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.all(20.r),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                        borderRadius: BorderRadius.circular(24.r),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(24.r),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: RefreshIndicator(
+                              onRefresh: () async {
+                                await _refreshUserData();
+                              },
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'My Posts',
-                                      style: TextStyle(
-                                        fontSize: 20.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green.shade800,
+                                    Padding(
+                                      padding: EdgeInsets.all(20.r),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'My Collection',
+                                            style: TextStyle(
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12.w,
+                                                vertical: 6.h),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.white.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(20.r),
+                                              border: Border.all(
+                                                color: Colors.white
+                                                    .withOpacity(0.3),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              _isLoadingPosts
+                                                  ? 'Loading...'
+                                                  : '$_postsCount Posts',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 12.w, vertical: 6.h),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.shade50,
-                                        borderRadius:
-                                            BorderRadius.circular(20.r),
-                                        border: Border.all(
-                                          color: Colors.green.shade200,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        _isLoadingPosts
-                                            ? 'Loading...'
-                                            : '$_postsCount Posts',
-                                        style: TextStyle(
-                                          color: Colors.green.shade700,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
+                                    _buildPostsGrid(),
+                                    SizedBox(height: 20.h),
                                   ],
                                 ),
                               ),
-                              _buildPostsGrid(),
-                              SizedBox(height: 20.h),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),
@@ -424,138 +472,152 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileHeader() {
-    // Use data from either Firebase Auth or Firestore
     final displayName = user?.displayName ?? 'Anonymous';
     final email = user?.email ?? '';
     final photoURL = user?.photoURL;
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: Stack(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(4.r),
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: _pickImage,
+          child: Stack(
+            children: [
+              Container(
+                padding: EdgeInsets.all(4.r),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.6),
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Container(
+                  width: 100.r,
+                  height: 100.r,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50.r),
+                    child: photoURL != null
+                        ? Image.network(
+                            photoURL,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.white.withOpacity(0.1),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50.r,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              );
+                            },
+                          )
+                        : Icon(
+                            Icons.person,
+                            size: 50.r,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                  ),
+                ),
+              ),
+              if (_isLoading)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.3),
+                    ),
+                    child: Center(
+                      child: SizedBox(
+                        width: 30.r,
+                        height: 30.r,
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                bottom: 4.h,
+                right: 4.w,
+                child: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.8),
-                      width: 3,
+                      color: Colors.white,
+                      width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
-                        blurRadius: 10,
-                        spreadRadius: 2,
+                        blurRadius: 8,
                       ),
                     ],
                   ),
-                  child: CircleAvatar(
-                    radius: 50.r,
-                    backgroundColor: Colors.green.shade300,
-                    backgroundImage: user?.photoURL != null
-                        ? NetworkImage(user!.photoURL!)
-                        : null,
-                    child: user?.photoURL == null
-                        ? Icon(Icons.person, size: 50.r, color: Colors.white)
-                        : null,
+                  child: Icon(
+                    Icons.camera_alt,
+                    color: Colors.brown.shade800,
+                    size: 16.r,
                   ),
                 ),
-                if (_isLoading)
-                  Positioned.fill(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: 3,
-                    ),
-                  ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.all(6.r),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade600,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 18.r,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            displayName,
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: 0.5,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            email,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14.sp,
-              letterSpacing: 0.3,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStat(
-                  _isLoadingPosts ? '...' : _postsCount.toString(), 'Posts'),
-              _buildDivider(),
-              _buildStat('0', 'Followers'),
-              _buildDivider(),
-              _buildStat('0', 'Following'),
+              ),
             ],
           ),
-        ],
-      ),
+        ),
+        SizedBox(height: 20.h),
+        Text(
+          displayName,
+          style: TextStyle(
+            fontSize: 24.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 5,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 6.h),
+        Text(
+          email,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 14.sp,
+            letterSpacing: 0.3,
+          ),
+        ),
+        SizedBox(height: 20.h),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStat(
+                _isLoadingPosts ? '...' : _postsCount.toString(), 'Posts'),
+            _buildDivider(),
+            _buildStat('0', 'Followers'),
+            _buildDivider(),
+            _buildStat('0', 'Following'),
+          ],
+        ),
+      ],
     );
   }
 
@@ -570,12 +632,13 @@ class _ProfileScreenState extends State<ProfileScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 4.h),
+        SizedBox(height: 6.h),
         Text(
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
             fontSize: 12.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -584,7 +647,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildDivider() {
     return Container(
-      height: 30.h,
+      height: 40.h,
       width: 1,
       color: Colors.white.withOpacity(0.3),
     );
@@ -601,10 +664,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: Padding(
-              padding: EdgeInsets.all(20.r),
+              padding: EdgeInsets.all(40.r),
               child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
           );
@@ -613,18 +675,21 @@ class _ProfileScreenState extends State<ProfileScreen>
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: EdgeInsets.all(20.r),
+              padding: EdgeInsets.all(40.r),
               child: Column(
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: Colors.red.shade400,
+                    color: Colors.white.withOpacity(0.7),
                     size: 40.r,
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 12.h),
                   Text(
                     'Error loading posts',
-                    style: TextStyle(color: Colors.red.shade400),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16.sp,
+                    ),
                   ),
                 ],
               ),
@@ -641,43 +706,71 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.post_add,
-                    size: 50.r,
-                    color: Colors.grey.shade400,
+                  Container(
+                    padding: EdgeInsets.all(24.r),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.1),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.post_add,
+                      size: 48.r,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 24.h),
                   Text(
                     'No posts yet',
                     style: TextStyle(
-                      fontSize: 18.sp,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 12.h),
                   Text(
-                    'Your posts will appear here',
+                    'Your saree collection will appear here',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: Colors.grey.shade500,
+                      color: Colors.white.withOpacity(0.7),
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 20.h),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/add-post');
-                    },
-                    icon: Icon(Icons.add),
-                    label: Text('Add Your First Post'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green.shade600,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 16.w, vertical: 10.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+                  SizedBox(height: 24.h),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/add-post');
+                          },
+                          icon: Icon(Icons.add, size: 20.r),
+                          label: Text('Add Your First Post'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shadowColor: Colors.transparent,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20.w, vertical: 12.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                              side: BorderSide(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -694,122 +787,166 @@ class _ProfileScreenState extends State<ProfileScreen>
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16.w,
-              mainAxisSpacing: 16.h,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
             ),
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index].data() as Map<String, dynamic>;
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SareeDetailScreen(saree: post),
-                    ),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Image
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16.r),
-                              topRight: Radius.circular(16.r),
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(post['imageUrl'] ?? ''),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Details
-                      Padding(
-                        padding: EdgeInsets.all(12.r),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              post['name'] ?? 'Unknown',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.sp,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 4.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                    vertical: 4.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: Text(
-                                    '৳${post['price']}',
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.sp,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.all(4.r),
-                                  decoration: BoxDecoration(
-                                    color: post['isAvailable'] == true
-                                        ? Colors.green.shade50
-                                        : Colors.red.shade50,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    post['isAvailable'] == true
-                                        ? Icons.check_circle
-                                        : Icons.cancel,
-                                    color: post['isAvailable'] == true
-                                        ? Colors.green.shade600
-                                        : Colors.red.shade400,
-                                    size: 16.r,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              return _buildPostCard(post);
             },
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPostCard(Map<String, dynamic> post) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SareeDetailScreen(saree: post),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16.r),
+                          topRight: Radius.circular(16.r),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16.r),
+                          topRight: Radius.circular(16.r),
+                        ),
+                        child: Image.network(
+                          post['imageUrl'] ?? '',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.white.withOpacity(0.1),
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.white.withOpacity(0.5),
+                                size: 30.r,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Details
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: EdgeInsets.all(12.r),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            post['name'] ?? 'Unknown',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
+                              color: Colors.white,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 6.h),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '৳${post['price']}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.sp,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Container(
+                                padding: EdgeInsets.all(4.r),
+                                decoration: BoxDecoration(
+                                  color: post['isAvailable'] == true
+                                      ? Colors.white.withOpacity(0.9)
+                                      : Colors.red.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  post['isAvailable'] == true
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
+                                  color: post['isAvailable'] == true
+                                      ? Colors.green.shade700
+                                      : Colors.white.withOpacity(0.7),
+                                  size: 16.r,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
