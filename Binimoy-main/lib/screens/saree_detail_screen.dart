@@ -65,13 +65,77 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  PageController _imagePageController = PageController();
+  int _currentImageIndex = 0;
+
+  // Image type definitions matching add post screen
+  final Map<String, String> _imageTypes = {
+    'anchol': 'আঁচল (Anchol)',
+    'par': 'পাড় (Par)',
+    'jomin': 'জমিন (Jomin)',
+    'kuchi': 'কুচি (Kuchi)',
+  };
+
+  // Helper method to get all available images
+  List<MapEntry<String, String>> _getAvailableImages() {
+    final images = widget.saree['images'] as Map<String, dynamic>? ?? {};
+    return _imageTypes.entries
+        .where((entry) =>
+            images[entry.key] != null &&
+            images[entry.key].toString().isNotEmpty)
+        .map((entry) => MapEntry(images[entry.key].toString(), entry.value))
+        .toList();
+  }
+
+  // Helper method to get display image URL for main image
+  String _getDisplayImageUrl() {
+    final availableImages = _getAvailableImages();
+    return availableImages.isNotEmpty ? availableImages.first.key : '';
+  }
+
+  // Helper method to format price display
+  String _getDisplayPrice() {
+    final category = widget.saree['category'] ?? 'SALE';
+    final basePrice = widget.saree['basePrice'] ?? widget.saree['price'] ?? 0;
+
+    if (category == 'RENT') {
+      return '৳${basePrice}/day';
+    } else {
+      return '৳${basePrice}';
+    }
+  }
+
+  // Helper method to get rental details
+  Map<String, dynamic> _getRentalDetails() {
+    final category = widget.saree['category'] ?? 'SALE';
+    if (category != 'RENT') return {};
+
+    final basePrice = widget.saree['basePrice'] ?? 0.0;
+    final rentalDays = widget.saree['rentalDays'] ?? 0;
+    final totalRentalPrice =
+        widget.saree['totalRentalPrice'] ?? (basePrice * rentalDays);
+    final serviceCharge =
+        widget.saree['serviceCharge'] ?? (totalRentalPrice * 0.20);
+    final totalPrice =
+        widget.saree['totalPrice'] ?? (totalRentalPrice + serviceCharge);
+
+    return {
+      'basePrice': basePrice,
+      'rentalDays': rentalDays,
+      'totalRentalPrice': totalRentalPrice,
+      'serviceCharge': serviceCharge,
+      'totalPrice': totalPrice,
+      'startDate': widget.saree['startDate'],
+      'endDate': widget.saree['endDate'],
+    };
+  }
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
@@ -82,410 +146,913 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _imagePageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final availableImages = _getAvailableImages();
+    final rentalDetails = _getRentalDetails();
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.green.shade800.withOpacity(0.3),
-                    Colors.teal.shade600.withOpacity(0.3),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8.r),
-            decoration: BoxDecoration(
-              color: Colors.black12,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.arrow_back, color: Colors.white, size: 20.r),
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: EdgeInsets.all(8.r),
-              decoration: BoxDecoration(
-                color: Colors.black12,
-                shape: BoxShape.circle,
-              ),
-              child:
-                  Icon(Icons.favorite_border, color: Colors.white, size: 20.r),
-            ),
-            onPressed: () {
-              // TODO: Implement favorite functionality
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('Added to favorites')));
-            },
-          ),
-          SizedBox(width: 8.w),
-        ],
-      ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade800,
-              Colors.teal.shade600,
-            ],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpg'),
+            fit: BoxFit.cover,
           ),
         ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            children: [
-              // Image section with gradient overlay
-              Container(
-                height: 340.h,
-                width: double.infinity,
-                child: Stack(
-                  children: [
-                    // Image
-                    Positioned.fill(
-                      child: Image.network(
-                        widget.saree['imageUrl'] ?? '',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: Icon(Icons.image_not_supported, size: 50.r),
-                          );
-                        },
-                      ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  // Custom App Bar with glass effect
+                  Container(
+                    margin: EdgeInsets.all(16.r),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
                     ),
-
-                    // Gradient overlay
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.5),
-                            ],
-                            stops: [0.7, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Price badge
-                    Positioned(
-                      right: 16.w,
-                      bottom: 16.h,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade700,
-                          borderRadius: BorderRadius.circular(20.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1.5,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          '৳${widget.saree['price'] ?? 0}',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Details section
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30.r),
-                      topRight: Radius.circular(30.r),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30.r),
-                      topRight: Radius.circular(30.r),
-                    ),
-                    child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(),
-                      child: Padding(
-                        padding: EdgeInsets.all(24.r),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Saree name and seller info
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        widget.saree['name'] ?? 'Unknown',
-                                        style: TextStyle(
-                                          fontSize: 24.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade800,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.h),
-                                      Row(
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 12.r,
-                                            backgroundColor:
-                                                Colors.grey.shade200,
-                                            child: Icon(
-                                              Icons.person,
-                                              size: 16.r,
-                                              color: Colors.green.shade700,
-                                            ),
-                                          ),
-                                          SizedBox(width: 8.w),
-                                          Text(
-                                            'Seller: ${widget.saree['userName'] ?? 'Anonymous'}',
-                                            style: TextStyle(
-                                              fontSize: 14.sp,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Saree type badge
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 12.w, vertical: 6.h),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 12.h),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: Container(
+                                  padding: EdgeInsets.all(8.r),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: Colors.green.shade200,
-                                      width: 1,
-                                    ),
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
                                   ),
-                                  child: Text(
-                                    widget.saree['type'] ?? 'Saree',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  child: Icon(Icons.arrow_back,
+                                      color: Colors.white, size: 20.r),
                                 ),
-                              ],
-                            ),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                'Saree Details',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontSize: 18.sp,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                icon: Container(
+                                  padding: EdgeInsets.all(8.r),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.favorite_border,
+                                      color: Colors.white, size: 20.r),
+                                ),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Added to favorites')),
+                                  );
+                                },
+                              ),
+                              SizedBox(width: 8.w),
+                              IconButton(
+                                icon: Container(
+                                  padding: EdgeInsets.all(8.r),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.share,
+                                      color: Colors.white, size: 20.r),
+                                ),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Share functionality')),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
-                            SizedBox(height: 24.h),
-
-                            // Description
-                            Text(
-                              'Description',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade800,
+                  // Main Content
+                  Expanded(
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 16.w),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24.r),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24.r),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(24.r),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1.5,
                               ),
                             ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              widget.saree['description'] ??
-                                  'No description available',
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                color: Colors.grey.shade700,
-                                height: 1.4,
-                              ),
-                            ),
-
-                            SizedBox(height: 32.h),
-
-                            // Action buttons
-                            Text(
-                              'Purchase Options',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade800,
-                              ),
-                            ),
-                            SizedBox(height: 16.h),
-                            Row(
-                              children: [
-                                _buildActionButton(
-                                  title: 'Buy',
-                                  icon: Icons.shopping_bag_outlined,
-                                  color: Colors.green.shade700,
-                                  onTap: _handleBuy,
-                                ),
-                                SizedBox(width: 12.w),
-                                _buildActionButton(
-                                  title: 'Rent',
-                                  icon: Icons.event_available_outlined,
-                                  color: Colors.amber.shade700,
-                                  onTap: _handleRent,
-                                ),
-                                SizedBox(width: 12.w),
-                                _buildActionButton(
-                                  title: 'Swap',
-                                  icon: Icons.swap_horiz,
-                                  color: Colors.blue.shade700,
-                                  onTap: _handleSwap,
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: 24.h),
-
-                            // Contact seller button
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                      receiverId: widget.saree['userId'],
-                                      receiverName: widget.saree['userName'],
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 16.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade50,
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  border: Border.all(
-                                    color: Colors.green.shade200,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                            child: SingleChildScrollView(
+                              physics: BouncingScrollPhysics(),
+                              child: Padding(
+                                padding: EdgeInsets.all(20.r),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.chat_bubble_outline,
-                                      color: Colors.green.shade700,
-                                      size: 20.r,
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    Text(
-                                      'Contact Seller',
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.green.shade700,
-                                      ),
-                                    ),
+                                    // Image Gallery Section
+                                    _buildImageGallery(availableImages),
+                                    SizedBox(height: 20.h),
+
+                                    // Saree Basic Info
+                                    _buildBasicInfo(),
+                                    SizedBox(height: 20.h),
+
+                                    // Price Information
+                                    _buildPriceInformation(rentalDetails),
+                                    SizedBox(height: 20.h),
+
+                                    // Detailed Information
+                                    _buildDetailedInfo(),
+                                    SizedBox(height: 20.h),
+
+                                    // Rental Calendar (if rent)
+                                    if (widget.saree['category'] == 'RENT' &&
+                                        rentalDetails.isNotEmpty) ...[
+                                      _buildRentalCalendar(rentalDetails),
+                                      SizedBox(height: 20.h),
+                                    ],
+
+                                    // Seller Information
+                                    _buildSellerInfo(),
+                                    SizedBox(height: 20.h),
+
+                                    // Action Buttons
+                                    _buildActionButtons(),
+                                    SizedBox(height: 20.h),
+
+                                    // Reviews Section
+                                    _buildReviewsSection(),
                                   ],
                                 ),
                               ),
                             ),
-
-                            SizedBox(height: 32.h),
-
-                            // Reviews section
-                            _buildReviewsSection(),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                  SizedBox(height: 16.h),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildActionButton({
-    required String title,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: color.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
+  Widget _buildImageGallery(List<MapEntry<String, String>> availableImages) {
+    if (availableImages.isEmpty) {
+      return Container(
+        height: 300.h,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Center(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 24.r,
-              ),
+              Icon(Icons.image_not_supported,
+                  size: 50.r, color: Colors.white.withOpacity(0.5)),
               SizedBox(height: 8.h),
               Text(
-                title,
+                'No images available',
                 style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
+                    color: Colors.white.withOpacity(0.7), fontSize: 14.sp),
               ),
             ],
           ),
         ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Main Image Display
+        Container(
+          height: 300.h,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            border:
+                Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _imagePageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  },
+                  itemCount: availableImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Image.network(
+                          availableImages[index].key,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child:
+                                  Icon(Icons.image_not_supported, size: 50.r),
+                            );
+                          },
+                        ),
+                        // Image type label
+                        Positioned(
+                          bottom: 16.h,
+                          left: 16.w,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12.w, vertical: 6.h),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              availableImages[index].value,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                // Category badge
+                Positioned(
+                  top: 16.h,
+                  right: 16.w,
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: widget.saree['category'] == 'RENT'
+                          ? Colors.blue.withOpacity(0.9)
+                          : Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Text(
+                      widget.saree['category'] ?? 'SALE',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                // Navigation arrows
+                if (availableImages.length > 1) ...[
+                  Positioned(
+                    left: 8.w,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: IconButton(
+                        onPressed: () {
+                          if (_currentImageIndex > 0) {
+                            _imagePageController.previousPage(
+                              duration: Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                        icon: Container(
+                          padding: EdgeInsets.all(8.r),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.chevron_left,
+                              color: Colors.white, size: 20.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 8.w,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: IconButton(
+                        onPressed: () {
+                          if (_currentImageIndex < availableImages.length - 1) {
+                            _imagePageController.nextPage(
+                              duration: Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                        icon: Container(
+                          padding: EdgeInsets.all(8.r),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.chevron_right,
+                              color: Colors.white, size: 20.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        // Image Thumbnails
+        if (availableImages.length > 1) ...[
+          SizedBox(
+            height: 60.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: availableImages.length,
+              itemBuilder: (context, index) {
+                final isSelected = index == _currentImageIndex;
+                return GestureDetector(
+                  onTap: () {
+                    _imagePageController.animateToPage(
+                      index,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: Container(
+                    width: 60.w,
+                    margin: EdgeInsets.only(right: 8.w),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.3),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Image.network(
+                        availableImages[index].key,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade300,
+                            child: Icon(Icons.image_not_supported, size: 20.r),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        // Page indicator
+        if (availableImages.length > 1) ...[
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(availableImages.length, (index) {
+              return Container(
+                width: 8.w,
+                height: 8.h,
+                margin: EdgeInsets.symmetric(horizontal: 4.w),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: index == _currentImageIndex
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.4),
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBasicInfo() {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.saree['name'] ?? 'Unknown Saree',
+                      style: TextStyle(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        widget.saree['type'] ?? 'Saree',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _getDisplayPrice(),
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (widget.saree['category'] == 'RENT' &&
+                      widget.saree['rentalDays'] != null) ...[
+                    SizedBox(height: 4.h),
+                    Text(
+                      '${widget.saree['rentalDays']} days',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceInformation(Map<String, dynamic> rentalDetails) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.monetization_on_outlined,
+                  color: Colors.white, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                'Pricing Details',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          if (widget.saree['category'] == 'RENT' &&
+              rentalDetails.isNotEmpty) ...[
+            _buildPriceRow('Price per Day:',
+                '৳ ${rentalDetails['basePrice']?.toStringAsFixed(2) ?? '0.00'}'),
+            _buildPriceRow(
+                'Rental Days:', '${rentalDetails['rentalDays'] ?? 0} days'),
+            _buildPriceRow('Subtotal:',
+                '৳ ${rentalDetails['totalRentalPrice']?.toStringAsFixed(2) ?? '0.00'}'),
+            _buildPriceRow('Service Charge (20%):',
+                '৳ ${rentalDetails['serviceCharge']?.toStringAsFixed(2) ?? '0.00'}'),
+            Divider(color: Colors.white.withOpacity(0.3), height: 24.h),
+            _buildPriceRow('Total Amount:',
+                '৳ ${rentalDetails['totalPrice']?.toStringAsFixed(2) ?? '0.00'}',
+                isTotal: true),
+          ] else ...[
+            _buildPriceRow('Base Price:',
+                '৳ ${(widget.saree['basePrice'] ?? widget.saree['price'] ?? 0).toStringAsFixed(2)}'),
+            _buildPriceRow('Service Charge (20%):',
+                '৳ ${(widget.saree['serviceCharge'] ?? 0).toStringAsFixed(2)}'),
+            Divider(color: Colors.white.withOpacity(0.3), height: 24.h),
+            _buildPriceRow('Total Amount:',
+                '৳ ${(widget.saree['totalPrice'] ?? widget.saree['price'] ?? 0).toStringAsFixed(2)}',
+                isTotal: true),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailedInfo() {
+    final details = [
+      if (widget.saree['color'] != null) {'Color': widget.saree['color']},
+      if (widget.saree['fabric'] != null) {'Fabric': widget.saree['fabric']},
+      if (widget.saree['brand'] != null) {'Brand': widget.saree['brand']},
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                'Saree Details',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          ...details
+              .map((detail) => Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child:
+                        _buildDetailRow(detail.keys.first, detail.values.first),
+                  ))
+              .toList(),
+          SizedBox(height: 12.h),
+          Text(
+            'Description',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            widget.saree['description'] ?? 'No description available',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.white.withOpacity(0.9),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRentalCalendar(Map<String, dynamic> rentalDetails) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_today, color: Colors.white, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                'Rental Period',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(12.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Start Date',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        rentalDetails['startDate'] != null
+                            ? '${(rentalDetails['startDate'] as Timestamp).toDate().day}/${(rentalDetails['startDate'] as Timestamp).toDate().month}/${(rentalDetails['startDate'] as Timestamp).toDate().year}'
+                            : 'Not specified',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(12.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'End Date',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        rentalDetails['endDate'] != null
+                            ? '${(rentalDetails['endDate'] as Timestamp).toDate().day}/${(rentalDetails['endDate'] as Timestamp).toDate().month}/${(rentalDetails['endDate'] as Timestamp).toDate().year}'
+                            : 'Not specified',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSellerInfo() {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, color: Colors.white, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                'Seller Information',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20.r,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: Icon(
+                  Icons.person,
+                  size: 20.r,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.saree['userName'] ?? 'Anonymous',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Verified Seller',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Contact seller button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(
+                        receiverId: widget.saree['userId'],
+                        receiverName: widget.saree['userName'],
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.chat_bubble_outline,
+                          color: Colors.white, size: 16.r),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Message',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.local_offer_outlined, color: Colors.white, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                'Purchase Options',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              _buildActionButton(
+                title: 'Buy',
+                icon: Icons.shopping_bag_outlined,
+                color: Colors.green.shade300,
+                onTap: _handleBuy,
+              ),
+              SizedBox(width: 12.w),
+              _buildActionButton(
+                title: 'Rent',
+                icon: Icons.event_available_outlined,
+                color: Colors.amber.shade300,
+                onTap: _handleRent,
+              ),
+              SizedBox(width: 12.w),
+              _buildActionButton(
+                title: 'Swap',
+                icon: Icons.swap_horiz,
+                color: Colors.blue.shade300,
+                onTap: _handleSwap,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -500,212 +1067,309 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-              child: CircularProgressIndicator(color: Colors.green.shade700));
+          return Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
         }
 
         final reviews = snapshot.data?.docs ?? [];
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Reviews & Ratings',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
-                  ),
-                ),
-                InkWell(
-                  onTap: () async {
-                    final result = await showDialog(
-                      context: context,
-                      builder: (context) => ReviewDialog(
-                        targetId: widget.saree['id'],
-                        targetType: 'saree',
-                      ),
-                    );
-                    if (result == true) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Review submitted successfully')),
-                      );
-                    }
-                  },
-                  child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: Colors.green.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.rate_review,
-                          size: 16.r,
-                          color: Colors.green.shade700,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          'Add Review',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            if (reviews.isEmpty)
-              Container(
-                padding: EdgeInsets.all(20.r),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: Column(
+        return Container(
+          padding: EdgeInsets.all(16.r),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
-                      Icon(
-                        Icons.rate_review_outlined,
-                        size: 40.r,
-                        color: Colors.grey.shade400,
-                      ),
-                      SizedBox(height: 12.h),
+                      Icon(Icons.rate_review_outlined,
+                          color: Colors.white, size: 20.r),
+                      SizedBox(width: 8.w),
                       Text(
-                        'No reviews yet',
+                        'Reviews',
                         style: TextStyle(
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'Be the first to leave a review',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ],
                   ),
-                ),
-              )
-            else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: reviews.length,
-                separatorBuilder: (context, index) => Divider(
-                  color: Colors.grey.shade200,
-                  height: 24.h,
-                ),
-                itemBuilder: (context, index) {
-                  final review = Review.fromMap(
-                    reviews[index].data() as Map<String, dynamic>,
-                    reviews[index].id,
-                  );
-
-                  return Container(
-                    padding: EdgeInsets.all(16.r),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1,
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await showDialog(
+                        context: context,
+                        builder: (context) => ReviewDialog(
+                          targetId: widget.saree['id'],
+                          targetType: 'saree',
+                        ),
+                      );
+                      if (result == true) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Review submitted successfully')),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.rate_review,
+                              size: 14.r, color: Colors.white),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'Add Review',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              if (reviews.isEmpty)
+                Container(
+                  padding: EdgeInsets.all(20.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16.r,
-                              backgroundColor: Colors.green.shade100,
-                              child: Text(
-                                review.userName.isNotEmpty
-                                    ? review.userName[0].toUpperCase()
-                                    : '?',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    review.userName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14.sp,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  Text(
-                                    "${review.createdAt.day}/${review.createdAt.month}/${review.createdAt.year}",
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: List.generate(5, (i) {
-                                return Icon(
-                                  i < review.rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 16.r,
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
+                        Icon(Icons.rate_review_outlined,
+                            size: 40.r, color: Colors.white.withOpacity(0.5)),
                         SizedBox(height: 12.h),
                         Text(
-                          review.comment,
+                          'No reviews yet',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Be the first to leave a review',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.grey.shade800,
-                            height: 1.4,
+                            color: Colors.white.withOpacity(0.6),
                           ),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-          ],
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: reviews.length,
+                  separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                  itemBuilder: (context, index) {
+                    final review = Review.fromMap(
+                      reviews[index].data() as Map<String, dynamic>,
+                      reviews[index].id,
+                    );
+
+                    return Container(
+                      padding: EdgeInsets.all(16.r),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16.r,
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                child: Text(
+                                  review.userName.isNotEmpty
+                                      ? review.userName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      review.userName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14.sp,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      "${review.createdAt.day}/${review.createdAt.month}/${review.createdAt.year}",
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: List.generate(5, (i) {
+                                  return Icon(
+                                    i < review.rating
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 16.r,
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            review.comment,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.white.withOpacity(0.9),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.8),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceRow(String label, String amount, {bool isTotal = false}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: isTotal ? 16.sp : 14.sp,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+          Text(
+            amount,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isTotal ? 16.sp : 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: color.withOpacity(0.4), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 20.r),
+              SizedBox(height: 6.h),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -725,7 +1389,6 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       return;
     }
 
-    // Navigate to the buy saree screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -750,7 +1413,6 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       return;
     }
 
-    // Navigate to the rent saree screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -775,35 +1437,11 @@ class _SareeDetailScreenState extends State<SareeDetailScreen>
       return;
     }
 
-    // Navigate to the swap saree screen
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SwapSaree(saree: widget.saree),
       ),
-    );
-  }
-
-  Widget _buildRentalInfoRow(String label, String value) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        SizedBox(width: 8.w),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: Colors.grey.shade700,
-          ),
-        ),
-      ],
     );
   }
 }

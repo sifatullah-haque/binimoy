@@ -120,6 +120,16 @@ class _HomeScreenState extends State<HomeScreen>
     return '';
   }
 
+  // Helper method to navigate to saree detail
+  void _navigateToSareeDetail(Map<String, dynamic> saree) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SareeDetailScreen(saree: saree),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -320,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         // New Arrivals Horizontal List
                         SizedBox(
-                          height: 220.h, // Increased height for more info
+                          height: 220.h,
                           child: StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('sarees')
@@ -347,146 +357,157 @@ class _HomeScreenState extends State<HomeScreen>
                                     'id': sarees[index].id,
                                   };
 
-                                  return Container(
-                                    width: 150.w, // Increased width
-                                    margin: EdgeInsets.only(right: 12.w),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.2),
-                                        width: 1,
+                                  return GestureDetector(
+                                    onTap: () => _navigateToSareeDetail(saree),
+                                    child: Container(
+                                      width: 150.w,
+                                      margin: EdgeInsets.only(right: 12.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.2),
+                                          width: 1,
+                                        ),
                                       ),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // Image with aspect ratio
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(16.r),
-                                                topRight: Radius.circular(16.r),
-                                              ),
-                                              child: AspectRatio(
-                                                aspectRatio: 1.2,
-                                                child: Image.network(
-                                                  _getDisplayImageUrl(saree),
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Container(
-                                                      color:
-                                                          Colors.grey.shade200,
-                                                      child: Icon(
-                                                        Icons
-                                                            .image_not_supported,
+                                      child: Stack(
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // Image with aspect ratio
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft:
+                                                      Radius.circular(16.r),
+                                                  topRight:
+                                                      Radius.circular(16.r),
+                                                ),
+                                                child: AspectRatio(
+                                                  aspectRatio: 1.2,
+                                                  child: Image.network(
+                                                    _getDisplayImageUrl(saree),
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Container(
                                                         color: Colors
-                                                            .grey.shade400,
-                                                        size: 30.r,
-                                                      ),
-                                                    );
-                                                  },
+                                                            .grey.shade200,
+                                                        child: Icon(
+                                                          Icons
+                                                              .image_not_supported,
+                                                          color: Colors
+                                                              .grey.shade400,
+                                                          size: 30.r,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            // Information section
-                                            Expanded(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.r),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Name and Type
-                                                    Text(
-                                                      saree['name'] ??
-                                                          'Unknown',
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12.sp,
-                                                        color: Colors.white,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 2.h),
-                                                    // Type and Brand
-                                                    Text(
-                                                      '${saree['type'] ?? ''} • ${saree['brand'] ?? ''}',
-                                                      style: TextStyle(
-                                                        color: Colors.white
-                                                            .withOpacity(0.7),
-                                                        fontSize: 9.sp,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 4.h),
-                                                    // Price
-                                                    Text(
-                                                      _formatPrice(saree),
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 11.sp,
-                                                      ),
-                                                    ),
-                                                    // Rental duration for RENT
-                                                    if (_getRentalDuration(
-                                                            saree)
-                                                        .isNotEmpty) ...[
-                                                      SizedBox(height: 2.h),
+                                              // Information section
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.r),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      // Name and Type
                                                       Text(
-                                                        _getRentalDuration(
-                                                            saree),
+                                                        saree['name'] ??
+                                                            'Unknown',
                                                         style: TextStyle(
-                                                          color: Colors.amber
-                                                              .withOpacity(0.8),
-                                                          fontSize: 9.sp,
                                                           fontWeight:
-                                                              FontWeight.w500,
+                                                              FontWeight.bold,
+                                                          fontSize: 12.sp,
+                                                          color: Colors.white,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      SizedBox(height: 2.h),
+                                                      // Type and Brand
+                                                      Text(
+                                                        '${saree['type'] ?? ''} • ${saree['brand'] ?? ''}',
+                                                        style: TextStyle(
+                                                          color: Colors.white
+                                                              .withOpacity(0.7),
+                                                          fontSize: 9.sp,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      SizedBox(height: 4.h),
+                                                      // Price
+                                                      Text(
+                                                        _formatPrice(saree),
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 11.sp,
                                                         ),
                                                       ),
+                                                      // Rental duration for RENT
+                                                      if (_getRentalDuration(
+                                                              saree)
+                                                          .isNotEmpty) ...[
+                                                        SizedBox(height: 2.h),
+                                                        Text(
+                                                          _getRentalDuration(
+                                                              saree),
+                                                          style: TextStyle(
+                                                            color: Colors.amber
+                                                                .withOpacity(
+                                                                    0.8),
+                                                            fontSize: 9.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ],
-                                                  ],
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        // Category badge
-                                        Positioned(
-                                          top: 6.h,
-                                          left: 6.w,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 6.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: saree['category'] == 'RENT'
-                                                  ? Colors.blue.withOpacity(0.8)
-                                                  : Colors.green
-                                                      .withOpacity(0.8),
-                                              borderRadius:
-                                                  BorderRadius.circular(8.r),
-                                            ),
-                                            child: Text(
-                                              saree['category'] ?? 'SALE',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8.sp,
-                                                fontWeight: FontWeight.bold,
+                                            ],
+                                          ),
+                                          // Category badge
+                                          Positioned(
+                                            top: 6.h,
+                                            left: 6.w,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 6.w,
+                                                  vertical: 2.h),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    saree['category'] == 'RENT'
+                                                        ? Colors.blue
+                                                            .withOpacity(0.8)
+                                                        : Colors.green
+                                                            .withOpacity(0.8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.r),
+                                              ),
+                                              child: Text(
+                                                saree['category'] ?? 'SALE',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 8.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
@@ -555,162 +576,174 @@ class _HomeScreenState extends State<HomeScreen>
                                     'id': sarees[index].id,
                                   };
 
-                                  return Container(
-                                    width: 150.w,
-                                    margin: EdgeInsets.only(right: 12.w),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.2),
-                                        width: 1,
+                                  return GestureDetector(
+                                    onTap: () => _navigateToSareeDetail(saree),
+                                    child: Container(
+                                      width: 150.w,
+                                      margin: EdgeInsets.only(right: 12.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.2),
+                                          width: 1,
+                                        ),
                                       ),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(16.r),
-                                                topRight: Radius.circular(16.r),
-                                              ),
-                                              child: AspectRatio(
-                                                aspectRatio: 1.2,
-                                                child: Image.network(
-                                                  _getDisplayImageUrl(saree),
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Container(
-                                                      color:
-                                                          Colors.grey.shade200,
-                                                      child: Icon(
-                                                        Icons
-                                                            .image_not_supported,
+                                      child: Stack(
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft:
+                                                      Radius.circular(16.r),
+                                                  topRight:
+                                                      Radius.circular(16.r),
+                                                ),
+                                                child: AspectRatio(
+                                                  aspectRatio: 1.2,
+                                                  child: Image.network(
+                                                    _getDisplayImageUrl(saree),
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Container(
                                                         color: Colors
-                                                            .grey.shade400,
-                                                        size: 30.r,
-                                                      ),
-                                                    );
-                                                  },
+                                                            .grey.shade200,
+                                                        child: Icon(
+                                                          Icons
+                                                              .image_not_supported,
+                                                          color: Colors
+                                                              .grey.shade400,
+                                                          size: 30.r,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            Expanded(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.r),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      saree['name'] ??
-                                                          'Unknown',
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12.sp,
-                                                        color: Colors.white,
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.r),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        saree['name'] ??
+                                                            'Unknown',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 12.sp,
+                                                          color: Colors.white,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 2.h),
-                                                    Text(
-                                                      '${saree['type'] ?? ''} • ${saree['color'] ?? ''}',
-                                                      style: TextStyle(
-                                                        color: Colors.white
-                                                            .withOpacity(0.7),
-                                                        fontSize: 9.sp,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 4.h),
-                                                    Text(
-                                                      _formatPrice(saree),
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 11.sp,
-                                                      ),
-                                                    ),
-                                                    if (_getRentalDuration(
-                                                            saree)
-                                                        .isNotEmpty) ...[
                                                       SizedBox(height: 2.h),
                                                       Text(
-                                                        _getRentalDuration(
-                                                            saree),
+                                                        '${saree['type'] ?? ''} • ${saree['color'] ?? ''}',
                                                         style: TextStyle(
-                                                          color: Colors.amber
-                                                              .withOpacity(0.8),
+                                                          color: Colors.white
+                                                              .withOpacity(0.7),
                                                           fontSize: 9.sp,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      SizedBox(height: 4.h),
+                                                      Text(
+                                                        _formatPrice(saree),
+                                                        style: TextStyle(
+                                                          color: Colors.white,
                                                           fontWeight:
-                                                              FontWeight.w500,
+                                                              FontWeight.bold,
+                                                          fontSize: 11.sp,
                                                         ),
                                                       ),
+                                                      if (_getRentalDuration(
+                                                              saree)
+                                                          .isNotEmpty) ...[
+                                                        SizedBox(height: 2.h),
+                                                        Text(
+                                                          _getRentalDuration(
+                                                              saree),
+                                                          style: TextStyle(
+                                                            color: Colors.amber
+                                                                .withOpacity(
+                                                                    0.8),
+                                                            fontSize: 9.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ],
-                                                  ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          // Deal badge
+                                          Positioned(
+                                            top: 6.h,
+                                            right: 6.w,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 5.w,
+                                                  vertical: 2.h),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                borderRadius:
+                                                    BorderRadius.circular(6.r),
+                                              ),
+                                              child: Text(
+                                                'DEAL',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 7.sp,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                        // Deal badge
-                                        Positioned(
-                                          top: 6.h,
-                                          right: 6.w,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 5.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius:
-                                                  BorderRadius.circular(6.r),
-                                            ),
-                                            child: Text(
-                                              'DEAL',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 7.sp,
-                                                fontWeight: FontWeight.bold,
+                                          ),
+                                          // Category badge
+                                          Positioned(
+                                            top: 6.h,
+                                            left: 6.w,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 6.w,
+                                                  vertical: 2.h),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    saree['category'] == 'RENT'
+                                                        ? Colors.blue
+                                                            .withOpacity(0.8)
+                                                        : Colors.green
+                                                            .withOpacity(0.8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.r),
+                                              ),
+                                              child: Text(
+                                                saree['category'] ?? 'SALE',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 8.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        // Category badge
-                                        Positioned(
-                                          top: 6.h,
-                                          left: 6.w,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 6.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: saree['category'] == 'RENT'
-                                                  ? Colors.blue.withOpacity(0.8)
-                                                  : Colors.green
-                                                      .withOpacity(0.8),
-                                              borderRadius:
-                                                  BorderRadius.circular(8.r),
-                                            ),
-                                            child: Text(
-                                              saree['category'] ?? 'SALE',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
@@ -780,162 +813,174 @@ class _HomeScreenState extends State<HomeScreen>
                                     'id': sarees[index].id,
                                   };
 
-                                  return Container(
-                                    width: 150.w,
-                                    margin: EdgeInsets.only(right: 12.w),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      border: Border.all(
-                                        color: Colors.amber.withOpacity(0.3),
-                                        width: 2,
+                                  return GestureDetector(
+                                    onTap: () => _navigateToSareeDetail(saree),
+                                    child: Container(
+                                      width: 150.w,
+                                      margin: EdgeInsets.only(right: 12.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                        border: Border.all(
+                                          color: Colors.amber.withOpacity(0.3),
+                                          width: 2,
+                                        ),
                                       ),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(16.r),
-                                                topRight: Radius.circular(16.r),
-                                              ),
-                                              child: AspectRatio(
-                                                aspectRatio: 1.2,
-                                                child: Image.network(
-                                                  _getDisplayImageUrl(saree),
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Container(
-                                                      color:
-                                                          Colors.grey.shade200,
-                                                      child: Icon(
-                                                        Icons
-                                                            .image_not_supported,
+                                      child: Stack(
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft:
+                                                      Radius.circular(16.r),
+                                                  topRight:
+                                                      Radius.circular(16.r),
+                                                ),
+                                                child: AspectRatio(
+                                                  aspectRatio: 1.2,
+                                                  child: Image.network(
+                                                    _getDisplayImageUrl(saree),
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Container(
                                                         color: Colors
-                                                            .grey.shade400,
-                                                        size: 30.r,
-                                                      ),
-                                                    );
-                                                  },
+                                                            .grey.shade200,
+                                                        child: Icon(
+                                                          Icons
+                                                              .image_not_supported,
+                                                          color: Colors
+                                                              .grey.shade400,
+                                                          size: 30.r,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            Expanded(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.r),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      saree['name'] ??
-                                                          'Unknown',
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12.sp,
-                                                        color: Colors.white,
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.r),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        saree['name'] ??
+                                                            'Unknown',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 12.sp,
+                                                          color: Colors.white,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 2.h),
-                                                    Text(
-                                                      '${saree['type'] ?? ''} • ${saree['fabric'] ?? ''}',
-                                                      style: TextStyle(
-                                                        color: Colors.white
-                                                            .withOpacity(0.7),
-                                                        fontSize: 9.sp,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    SizedBox(height: 4.h),
-                                                    Text(
-                                                      _formatPrice(saree),
-                                                      style: TextStyle(
-                                                        color: Colors.amber,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 11.sp,
-                                                      ),
-                                                    ),
-                                                    if (_getRentalDuration(
-                                                            saree)
-                                                        .isNotEmpty) ...[
                                                       SizedBox(height: 2.h),
                                                       Text(
-                                                        _getRentalDuration(
-                                                            saree),
+                                                        '${saree['type'] ?? ''} • ${saree['fabric'] ?? ''}',
                                                         style: TextStyle(
-                                                          color: Colors.amber
-                                                              .withOpacity(0.8),
+                                                          color: Colors.white
+                                                              .withOpacity(0.7),
                                                           fontSize: 9.sp,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      SizedBox(height: 4.h),
+                                                      Text(
+                                                        _formatPrice(saree),
+                                                        style: TextStyle(
+                                                          color: Colors.amber,
                                                           fontWeight:
-                                                              FontWeight.w500,
+                                                              FontWeight.bold,
+                                                          fontSize: 11.sp,
                                                         ),
                                                       ),
+                                                      if (_getRentalDuration(
+                                                              saree)
+                                                          .isNotEmpty) ...[
+                                                        SizedBox(height: 2.h),
+                                                        Text(
+                                                          _getRentalDuration(
+                                                              saree),
+                                                          style: TextStyle(
+                                                            color: Colors.amber
+                                                                .withOpacity(
+                                                                    0.8),
+                                                            fontSize: 9.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ],
-                                                  ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          // Premium badge
+                                          Positioned(
+                                            top: 6.h,
+                                            right: 6.w,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 5.w,
+                                                  vertical: 2.h),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber,
+                                                borderRadius:
+                                                    BorderRadius.circular(6.r),
+                                              ),
+                                              child: Text(
+                                                'PREMIUM',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 7.sp,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                        // Premium badge
-                                        Positioned(
-                                          top: 6.h,
-                                          right: 6.w,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 5.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: Colors.amber,
-                                              borderRadius:
-                                                  BorderRadius.circular(6.r),
-                                            ),
-                                            child: Text(
-                                              'PREMIUM',
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 7.sp,
-                                                fontWeight: FontWeight.bold,
+                                          ),
+                                          // Category badge
+                                          Positioned(
+                                            top: 6.h,
+                                            left: 6.w,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 6.w,
+                                                  vertical: 2.h),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    saree['category'] == 'RENT'
+                                                        ? Colors.blue
+                                                            .withOpacity(0.8)
+                                                        : Colors.green
+                                                            .withOpacity(0.8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.r),
+                                              ),
+                                              child: Text(
+                                                saree['category'] ?? 'SALE',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 8.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        // Category badge
-                                        Positioned(
-                                          top: 6.h,
-                                          left: 6.w,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 6.w, vertical: 2.h),
-                                            decoration: BoxDecoration(
-                                              color: saree['category'] == 'RENT'
-                                                  ? Colors.blue.withOpacity(0.8)
-                                                  : Colors.green
-                                                      .withOpacity(0.8),
-                                              borderRadius:
-                                                  BorderRadius.circular(8.r),
-                                            ),
-                                            child: Text(
-                                              saree['category'] ?? 'SALE',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
