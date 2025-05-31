@@ -29,7 +29,10 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   String _selectedCategory = 'RENT';
-  final List<String> _categories = ['RENT', 'RESALE'];
+  final List<String> _categories = [
+    'RENT',
+    'SALE'
+  ]; // Updated to match add post screen
 
   @override
   void initState() {
@@ -143,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
 
-                // Welcome message and RENT/RESALE buttons
+                // Welcome message and RENT/SALE buttons
                 Padding(
                   padding:
                       EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -200,13 +203,13 @@ class _HomeScreenState extends State<HomeScreen>
                             child: GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  _selectedCategory = 'RESALE';
+                                  _selectedCategory = 'SALE';
                                 });
                               },
                               child: Container(
                                 padding: EdgeInsets.symmetric(vertical: 8.h),
                                 decoration: BoxDecoration(
-                                  color: _selectedCategory == 'RESALE'
+                                  color: _selectedCategory == 'SALE'
                                       ? Colors.white
                                       : Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(16.r),
@@ -216,10 +219,10 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ),
                                 child: Text(
-                                  'RESALE',
+                                  'SALE',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: _selectedCategory == 'RESALE'
+                                    color: _selectedCategory == 'SALE'
                                         ? Colors.brown.shade800
                                         : Colors.white,
                                     fontSize: 14.sp,
@@ -273,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // New Arrivals Horizontal List
+                        // New Arrivals Horizontal List with Category Filter
                         SizedBox(
                           height: 180.h,
                           child: StreamBuilder<QuerySnapshot>(
@@ -283,7 +286,17 @@ class _HomeScreenState extends State<HomeScreen>
                                 .limit(10)
                                 .snapshots(),
                             builder: (context, snapshot) {
-                              final sarees = snapshot.data?.docs ?? [];
+                              final allSarees = snapshot.data?.docs ?? [];
+
+                              // Filter by category if the saree has a category field, otherwise show all
+                              final sarees = allSarees.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final category = data['category'];
+                                // If no category field exists (old data), show it
+                                // If category exists, filter by selected category
+                                return category == null ||
+                                    category == _selectedCategory;
+                              }).toList();
 
                               return ListView.builder(
                                 scrollDirection: Axis.horizontal,
@@ -375,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         SizedBox(height: 24.h),
 
-                        // Best Deals Section
+                        // Best Deals Section with Category Filter
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
@@ -404,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // Best Deals Horizontal List
+                        // Best Deals Horizontal List with Category Filter
                         SizedBox(
                           height: 180.h,
                           child: StreamBuilder<QuerySnapshot>(
@@ -414,7 +427,15 @@ class _HomeScreenState extends State<HomeScreen>
                                 .limit(10)
                                 .snapshots(),
                             builder: (context, snapshot) {
-                              final sarees = snapshot.data?.docs ?? [];
+                              final allSarees = snapshot.data?.docs ?? [];
+
+                              // Filter by category if the saree has a category field, otherwise show all
+                              final sarees = allSarees.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final category = data['category'];
+                                return category == null ||
+                                    category == _selectedCategory;
+                              }).toList();
 
                               return ListView.builder(
                                 scrollDirection: Axis.horizontal,
@@ -538,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         SizedBox(height: 24.h),
 
-                        // Premium Collection Section
+                        // Premium Collection Section with Category Filter
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
@@ -567,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // Premium Collection Horizontal List
+                        // Premium Collection with Category Filter
                         SizedBox(
                           height: 180.h,
                           child: StreamBuilder<QuerySnapshot>(
@@ -578,7 +599,15 @@ class _HomeScreenState extends State<HomeScreen>
                                 .limit(10)
                                 .snapshots(),
                             builder: (context, snapshot) {
-                              final sarees = snapshot.data?.docs ?? [];
+                              final allSarees = snapshot.data?.docs ?? [];
+
+                              // Filter by category if the saree has a category field, otherwise show all
+                              final sarees = allSarees.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final category = data['category'];
+                                return category == null ||
+                                    category == _selectedCategory;
+                              }).toList();
 
                               return ListView.builder(
                                 scrollDirection: Axis.horizontal,

@@ -27,14 +27,14 @@ class _AddPostScreenState extends State<AddPostScreen>
   final _picker = ImagePicker();
   File? _imageFile;
   bool _isLoading = false;
-  String _selectedType = 'Jamdani'; // Default value
+  String _selectedType = 'Jamdani';
+  String _selectedCategory = 'RENT'; // Add category selection
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final _uuid = Uuid();
   final _storageService = StorageService();
 
-  // Upload progress tracking
   double _uploadProgress = 0;
   bool _showProgress = false;
 
@@ -50,6 +50,8 @@ class _AddPostScreenState extends State<AddPostScreen>
     'Net',
     'Tussar Silk'
   ];
+
+  final List<String> _categories = ['RENT', 'SALE']; // Add categories list
 
   @override
   void initState() {
@@ -173,6 +175,7 @@ class _AddPostScreenState extends State<AddPostScreen>
         'price': price,
         'description': _descriptionController.text.trim(),
         'type': _selectedType,
+        'category': _selectedCategory, // Add category to data
         'imageUrl': imageUrl,
         'userId': user.uid,
         'userName': user.displayName ?? 'Anonymous',
@@ -227,407 +230,550 @@ class _AddPostScreenState extends State<AddPostScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.green.shade800.withOpacity(0.3),
-                    Colors.teal.shade600.withOpacity(0.3),
-                  ],
-                ),
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
+              ],
             ),
           ),
-        ),
-        title: Text(
-          'Add New Saree',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade800,
-              Colors.teal.shade600,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              children: [
-                // Page title and description
-                Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Share your beautiful saree with others',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  // Custom App Bar
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back,
+                              color: Colors.white, size: 24.r),
+                          onPressed: () => Navigator.pop(context),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Main content
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30.r),
-                        topRight: Radius.circular(30.r),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, -2),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Add New Saree',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 20.sp,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30.r),
-                        topRight: Radius.circular(30.r),
+                  ),
+
+                  // Subtitle
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Share your beautiful saree with the community',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Category Selection Buttons (matching home screen style)
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = 'RENT';
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                              decoration: BoxDecoration(
+                                color: _selectedCategory == 'RENT'
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                'RENT',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _selectedCategory == 'RENT'
+                                      ? Colors.brown.shade800
+                                      : Colors.white,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = 'SALE';
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                              decoration: BoxDecoration(
+                                color: _selectedCategory == 'SALE'
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                'SALE',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _selectedCategory == 'SALE'
+                                      ? Colors.brown.shade800
+                                      : Colors.white,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Main Content with Glass Effect
+                  Expanded(
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 16.w),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24.r),
                       ),
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.all(20.r),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image picker
-                              GestureDetector(
-                                onTap: _pickImage,
-                                child: Container(
-                                  height: 180.h,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: _imageFile != null
-                                      ? ClipRRect(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24.r),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(24.r),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: SingleChildScrollView(
+                              padding: EdgeInsets.all(20.r),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Image Picker with Glass Effect
+                                    GestureDetector(
+                                      onTap: _pickImage,
+                                      child: Container(
+                                        height: 200.h,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
                                           borderRadius:
-                                              BorderRadius.circular(16.r),
-                                          child: Image.file(
-                                            _imageFile!,
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
+                                              BorderRadius.circular(20.r),
+                                          border: Border.all(
+                                            color:
+                                                Colors.white.withOpacity(0.3),
+                                            width: 2,
                                           ),
-                                        )
-                                      : Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.add_photo_alternate,
-                                              size: 50.r,
-                                              color: Colors.green.shade600,
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(20.r),
+                                          child: _imageFile != null
+                                              ? Stack(
+                                                  children: [
+                                                    Image.file(
+                                                      _imageFile!,
+                                                      fit: BoxFit.cover,
+                                                      width: double.infinity,
+                                                      height: double.infinity,
+                                                    ),
+                                                    // Dark overlay for better visibility
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        gradient:
+                                                            LinearGradient(
+                                                          begin: Alignment
+                                                              .topCenter,
+                                                          end: Alignment
+                                                              .bottomCenter,
+                                                          colors: [
+                                                            Colors.transparent,
+                                                            Colors.black
+                                                                .withOpacity(
+                                                                    0.3),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    // Change photo button
+                                                    Positioned(
+                                                      bottom: 12.h,
+                                                      right: 12.w,
+                                                      child: Container(
+                                                        padding:
+                                                            EdgeInsets.all(8.r),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.white
+                                                              .withOpacity(0.2),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      20.r),
+                                                        ),
+                                                        child: Icon(
+                                                          Icons.edit,
+                                                          color: Colors.white,
+                                                          size: 20.r,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              : BackdropFilter(
+                                                  filter: ImageFilter.blur(
+                                                      sigmaX: 10, sigmaY: 10),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.1),
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                  20.r),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                    0.1),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                          child: Icon(
+                                                            Icons
+                                                                .add_photo_alternate,
+                                                            size: 40.r,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 16.h),
+                                                        Text(
+                                                          'Add Saree Photo',
+                                                          style: TextStyle(
+                                                            fontSize: 18.sp,
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 8.h),
+                                                        Text(
+                                                          'Tap to select from gallery',
+                                                          style: TextStyle(
+                                                            fontSize: 14.sp,
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                    0.7),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 24.h),
+
+                                    // Form Fields
+                                    _buildGlassTextField(
+                                      controller: _nameController,
+                                      labelText: 'Saree Name',
+                                      hintText: 'Enter saree name',
+                                      prefixIcon: Icons.label_outline,
+                                      validator: (value) =>
+                                          value?.isEmpty ?? true
+                                              ? 'Please enter a name'
+                                              : null,
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    // Saree Type Dropdown
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                              sigmaX: 10, sigmaY: 10),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.white.withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(16.r),
+                                              border: Border.all(
+                                                color: Colors.white
+                                                    .withOpacity(0.3),
+                                                width: 1,
+                                              ),
                                             ),
-                                            SizedBox(height: 12.h),
-                                            Text(
-                                              'Add Saree Photo',
+                                            child:
+                                                DropdownButtonFormField<String>(
+                                              value: _selectedType,
+                                              decoration: InputDecoration(
+                                                labelText: 'Saree Type',
+                                                labelStyle: TextStyle(
+                                                  color: Colors.white
+                                                      .withOpacity(0.9),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                prefixIcon: Icon(
+                                                  Icons.category_outlined,
+                                                  color: Colors.white
+                                                      .withOpacity(0.8),
+                                                ),
+                                                border: InputBorder.none,
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                  vertical: 16.h,
+                                                  horizontal: 16.w,
+                                                ),
+                                              ),
+                                              dropdownColor:
+                                                  Colors.black.withOpacity(0.8),
                                               style: TextStyle(
-                                                fontSize: 16.sp,
-                                                color: Colors.green.shade700,
+                                                color: Colors.white,
+                                                fontSize: 15.sp,
+                                              ),
+                                              icon: Icon(
+                                                Icons.keyboard_arrow_down,
+                                                color: Colors.white
+                                                    .withOpacity(0.8),
+                                              ),
+                                              items: _sareeTypes
+                                                  .map((String type) {
+                                                return DropdownMenuItem(
+                                                  value: type,
+                                                  child: Text(
+                                                    type,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                              onChanged: (String? newValue) {
+                                                setState(() {
+                                                  _selectedType = newValue!;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    _buildGlassTextField(
+                                      controller: _priceController,
+                                      labelText: 'Price',
+                                      hintText: 'Enter price in BDT',
+                                      prefixIcon:
+                                          Icons.monetization_on_outlined,
+                                      keyboardType: TextInputType.number,
+                                      prefixText: '৳ ',
+                                      validator: (value) =>
+                                          value?.isEmpty ?? true
+                                              ? 'Please enter a price'
+                                              : null,
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    _buildGlassTextField(
+                                      controller: _descriptionController,
+                                      labelText: 'Description',
+                                      hintText: 'Describe your saree...',
+                                      prefixIcon: Icons.description_outlined,
+                                      maxLines: 4,
+                                      validator: (value) =>
+                                          value?.isEmpty ?? true
+                                              ? 'Please add a description'
+                                              : null,
+                                    ),
+                                    SizedBox(height: 24.h),
+
+                                    // Upload Progress
+                                    if (_showProgress)
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 12.h),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Uploading: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                                              style: TextStyle(
+                                                color: Colors.white
+                                                    .withOpacity(0.9),
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             SizedBox(height: 8.h),
-                                            Text(
-                                              'Tap to select from gallery',
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: Colors.grey.shade600,
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.r),
+                                              child: LinearProgressIndicator(
+                                                value: _uploadProgress,
+                                                backgroundColor: Colors.white
+                                                    .withOpacity(0.2),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(
+                                                  Colors.white,
+                                                ),
+                                                minHeight: 6.h,
                                               ),
                                             ),
                                           ],
                                         ),
-                                ),
-                              ),
-                              SizedBox(height: 24.h),
-
-                              // Saree name field
-                              _buildTextField(
-                                controller: _nameController,
-                                labelText: 'Saree Name',
-                                hintText: 'Enter saree name',
-                                prefixIcon: Icons.label_outline,
-                                validator: (value) => value?.isEmpty ?? true
-                                    ? 'Please enter a name'
-                                    : null,
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Saree type dropdown - Improved for better visibility
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: DropdownButtonFormField<String>(
-                                  value: _selectedType,
-                                  decoration: InputDecoration(
-                                    labelText: 'Saree Type',
-                                    labelStyle: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.category_outlined,
-                                      color: Colors.green.shade600,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 16.h,
-                                      horizontal: 16.w,
-                                    ),
-                                  ),
-                                  items: _sareeTypes.map((String type) {
-                                    return DropdownMenuItem(
-                                      value: type,
-                                      child: Text(
-                                        type,
-                                        style: TextStyle(
-                                          color: Colors.grey.shade800,
-                                          fontWeight: FontWeight.w500,
-                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      _selectedType = newValue!;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    Icons.arrow_drop_down_circle,
-                                    color: Colors.green.shade700,
-                                  ),
-                                  dropdownColor: Colors.white,
-                                  style: TextStyle(
-                                    color: Colors.green.shade800,
-                                    fontSize: 15.sp,
-                                  ),
-                                  isExpanded: true,
-                                  menuMaxHeight: 300.h,
-                                  elevation: 8,
-                                  focusColor: Colors.transparent,
-                                  iconSize: 26.r,
-                                ),
-                              ),
-                              SizedBox(height: 16.h),
 
-                              // Price field
-                              _buildTextField(
-                                controller: _priceController,
-                                labelText: 'Price',
-                                hintText: 'Enter price in BDT',
-                                prefixIcon: Icons.monetization_on_outlined,
-                                keyboardType: TextInputType.number,
-                                prefixText: '৳ ',
-                                validator: (value) => value?.isEmpty ?? true
-                                    ? 'Please enter a price'
-                                    : null,
-                              ),
-                              SizedBox(height: 16.h),
-
-                              // Description field
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: TextFormField(
-                                  controller: _descriptionController,
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 15.sp,
-                                  ),
-                                  decoration: InputDecoration(
-                                    labelText: 'Description',
-                                    labelStyle: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    hintText: 'Describe your saree...',
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey.shade400,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.description_outlined,
-                                      color: Colors.green.shade600,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 16.h,
-                                      horizontal: 16.w,
-                                    ),
-                                    alignLabelWithHint: true,
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      borderSide: BorderSide(
-                                        color: Colors.green.shade400,
-                                        width: 1.5,
+                                    // Submit Button
+                                    Container(
+                                      width: double.infinity,
+                                      height: 56.h,
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
                                       ),
-                                    ),
-                                  ),
-                                  maxLines: 4,
-                                  validator: (value) => value?.isEmpty ?? true
-                                      ? 'Please add a description'
-                                      : null,
-                                ),
-                              ),
-                              SizedBox(height: 32.h),
-
-                              // Upload progress indicator
-                              if (_showProgress)
-                                Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8.h),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Uploading image: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
-                                        style: TextStyle(
-                                          color: Colors.green.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.h),
-                                      LinearProgressIndicator(
-                                        value: _uploadProgress,
-                                        backgroundColor: Colors.grey.shade200,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          Colors.green.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              // Submit button
-                              AnimatedContainer(
-                                duration: Duration(milliseconds: 300),
-                                width: double.infinity,
-                                height: 55.h,
-                                child: ElevatedButton(
-                                  onPressed: _isLoading ? null : _submitPost,
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: Colors.green.shade700,
-                                    padding: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16.r),
-                                    ),
-                                    elevation: 3,
-                                    shadowColor: Colors.green.withOpacity(0.3),
-                                  ),
-                                  child: _isLoading
-                                      ? SizedBox(
-                                          height: 24.r,
-                                          width: 24.r,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(16.r),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                              sigmaX: 10, sigmaY: 10),
+                                          child: ElevatedButton(
+                                            onPressed:
+                                                _isLoading ? null : _submitPost,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.white.withOpacity(0.2),
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              shadowColor: Colors.transparent,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16.r),
+                                                side: BorderSide(
+                                                  color: Colors.white
+                                                      .withOpacity(0.3),
+                                                  width: 1.5,
+                                                ),
+                                              ),
+                                            ),
+                                            child: _isLoading
+                                                ? SizedBox(
+                                                    height: 24.r,
+                                                    width: 24.r,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2.5,
+                                                    ),
+                                                  )
+                                                : Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(Icons.publish,
+                                                          size: 20.r),
+                                                      SizedBox(width: 8.w),
+                                                      Text(
+                                                        'Post Saree',
+                                                        style: TextStyle(
+                                                          fontSize: 16.sp,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                           ),
-                                        )
-                                      : Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.add_circle_outline,
-                                                size: 20.r),
-                                            SizedBox(width: 8.w),
-                                            Text(
-                                              'Post Saree',
-                                              style: TextStyle(
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ],
                                         ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                  ],
                                 ),
                               ),
-                              SizedBox(height: 20.h),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(height: 16.h),
+                ],
+              ),
             ),
           ),
         ),
@@ -635,76 +781,74 @@ class _AddPostScreenState extends State<AddPostScreen>
     );
   }
 
-  // Helper method to build text fields with consistent styling
-  Widget _buildTextField({
+  Widget _buildGlassTextField({
     required TextEditingController controller,
     required String labelText,
     required String hintText,
     required IconData prefixIcon,
     String? prefixText,
     TextInputType? keyboardType,
+    int? maxLines,
     required String? Function(String?) validator,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
-      child: TextFormField(
-        controller: controller,
-        style: TextStyle(
-          color: Colors.black87,
-          fontSize: 15.sp,
-        ),
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: TextStyle(
-            color: Colors.green.shade700,
-            fontWeight: FontWeight.w500,
-          ),
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
-          ),
-          prefixIcon: Icon(
-            prefixIcon,
-            color: Colors.green.shade600,
-          ),
-          prefixText: prefixText,
-          prefixStyle: prefixText != null
-              ? TextStyle(
-                  color: Colors.green.shade700,
-                  fontSize: 16.sp,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: TextFormField(
+              controller: controller,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15.sp,
+              ),
+              decoration: InputDecoration(
+                labelText: labelText,
+                labelStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
                   fontWeight: FontWeight.w500,
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
-          contentPadding: EdgeInsets.symmetric(
-            vertical: 16.h,
-            horizontal: 16.w,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(
-              color: Colors.green.shade400,
-              width: 1.5,
+                ),
+                hintText: hintText,
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                ),
+                prefixIcon: Icon(
+                  prefixIcon,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+                prefixText: prefixText,
+                prefixStyle: prefixText != null
+                    ? TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 16.h,
+                  horizontal: 16.w,
+                ),
+                alignLabelWithHint: true,
+              ),
+              keyboardType: keyboardType,
+              maxLines: maxLines ?? 1,
+              validator: validator,
             ),
           ),
         ),
-        keyboardType: keyboardType,
-        validator: validator,
       ),
     );
   }
