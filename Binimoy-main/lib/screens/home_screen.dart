@@ -78,6 +78,48 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // Helper method to get display image URL
+  String _getDisplayImageUrl(Map<String, dynamic> saree) {
+    if (saree['images'] != null && saree['images'] is Map) {
+      final images = saree['images'] as Map<String, dynamic>;
+      // Try to get anchol first, then other images
+      return images['anchol'] ??
+          images['par'] ??
+          images['jomin'] ??
+          images['kuchi'] ??
+          '';
+    }
+    // Fallback to old imageUrl field
+    return saree['imageUrl'] ?? '';
+  }
+
+  // Helper method to format price display
+  String _formatPrice(Map<String, dynamic> saree) {
+    final category = saree['category'] ?? 'SALE';
+    final basePrice = saree['basePrice'] ?? saree['price'] ?? 0;
+
+    if (category == 'RENT') {
+      return '৳${basePrice.toString()}/day';
+    } else {
+      return '৳${basePrice.toString()}';
+    }
+  }
+
+  // Helper method to get total price
+  String _getTotalPrice(Map<String, dynamic> saree) {
+    final totalPrice = saree['totalPrice'] ?? saree['price'] ?? 0;
+    return '৳${totalPrice.toString()}';
+  }
+
+  // Helper method to get rental duration
+  String _getRentalDuration(Map<String, dynamic> saree) {
+    if (saree['category'] == 'RENT' && saree['rentalDays'] != null) {
+      final days = saree['rentalDays'];
+      return '$days day${days > 1 ? 's' : ''}';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,9 +318,9 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // New Arrivals Horizontal List with Category Filter
+                        // New Arrivals Horizontal List
                         SizedBox(
-                          height: 180.h,
+                          height: 220.h, // Increased height for more info
                           child: StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('sarees')
@@ -287,13 +329,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 .snapshots(),
                             builder: (context, snapshot) {
                               final allSarees = snapshot.data?.docs ?? [];
-
-                              // Filter by category if the saree has a category field, otherwise show all
                               final sarees = allSarees.where((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
                                 final category = data['category'];
-                                // If no category field exists (old data), show it
-                                // If category exists, filter by selected category
                                 return category == null ||
                                     category == _selectedCategory;
                               }).toList();
@@ -310,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   };
 
                                   return Container(
-                                    width: 130.w,
+                                    width: 150.w, // Increased width
                                     margin: EdgeInsets.only(right: 12.w),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.1),
@@ -320,61 +358,132 @@ class _HomeScreenState extends State<HomeScreen>
                                         width: 1,
                                       ),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    child: Stack(
                                       children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(16.r),
-                                            topRight: Radius.circular(16.r),
-                                          ),
-                                          child: AspectRatio(
-                                            aspectRatio: 1.1,
-                                            child: Image.network(
-                                              saree['imageUrl'] ?? '',
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Container(
-                                                  color: Colors.grey.shade200,
-                                                  child: Icon(
-                                                    Icons.image_not_supported,
-                                                    color: Colors.grey.shade400,
-                                                    size: 30.r,
-                                                  ),
-                                                );
-                                              },
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Image with aspect ratio
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(16.r),
+                                                topRight: Radius.circular(16.r),
+                                              ),
+                                              child: AspectRatio(
+                                                aspectRatio: 1.2,
+                                                child: Image.network(
+                                                  _getDisplayImageUrl(saree),
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        color: Colors
+                                                            .grey.shade400,
+                                                        size: 30.r,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                            // Information section
+                                            Expanded(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.r),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Name and Type
+                                                    Text(
+                                                      saree['name'] ??
+                                                          'Unknown',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 12.sp,
+                                                        color: Colors.white,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    SizedBox(height: 2.h),
+                                                    // Type and Brand
+                                                    Text(
+                                                      '${saree['type'] ?? ''} • ${saree['brand'] ?? ''}',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withOpacity(0.7),
+                                                        fontSize: 9.sp,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    SizedBox(height: 4.h),
+                                                    // Price
+                                                    Text(
+                                                      _formatPrice(saree),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 11.sp,
+                                                      ),
+                                                    ),
+                                                    // Rental duration for RENT
+                                                    if (_getRentalDuration(
+                                                            saree)
+                                                        .isNotEmpty) ...[
+                                                      SizedBox(height: 2.h),
+                                                      Text(
+                                                        _getRentalDuration(
+                                                            saree),
+                                                        style: TextStyle(
+                                                          color: Colors.amber
+                                                              .withOpacity(0.8),
+                                                          fontSize: 9.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Padding(
-                                          padding: EdgeInsets.all(8.r),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                saree['name'] ?? 'Unknown',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 11.sp,
-                                                  color: Colors.white,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              SizedBox(height: 3.h),
-                                              Text(
-                                                '৳${saree['price'] ?? 0}',
-                                                style: TextStyle(
-                                                  color: Colors.white
+                                        // Category badge
+                                        Positioned(
+                                          top: 6.h,
+                                          left: 6.w,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 6.w, vertical: 2.h),
+                                            decoration: BoxDecoration(
+                                              color: saree['category'] == 'RENT'
+                                                  ? Colors.blue.withOpacity(0.8)
+                                                  : Colors.green
                                                       .withOpacity(0.8),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 10.sp,
-                                                ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.r),
+                                            ),
+                                            child: Text(
+                                              saree['category'] ?? 'SALE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8.sp,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                            ],
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -388,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         SizedBox(height: 24.h),
 
-                        // Best Deals Section with Category Filter
+                        // Best Deals Section
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
@@ -417,9 +526,9 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // Best Deals Horizontal List with Category Filter
+                        // Best Deals Horizontal List
                         SizedBox(
-                          height: 180.h,
+                          height: 220.h,
                           child: StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('sarees')
@@ -428,8 +537,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 .snapshots(),
                             builder: (context, snapshot) {
                               final allSarees = snapshot.data?.docs ?? [];
-
-                              // Filter by category if the saree has a category field, otherwise show all
                               final sarees = allSarees.where((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
                                 final category = data['category'];
@@ -449,7 +556,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   };
 
                                   return Container(
-                                    width: 130.w,
+                                    width: 150.w,
                                     margin: EdgeInsets.only(right: 12.w),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.1),
@@ -471,9 +578,9 @@ class _HomeScreenState extends State<HomeScreen>
                                                 topRight: Radius.circular(16.r),
                                               ),
                                               child: AspectRatio(
-                                                aspectRatio: 1.1,
+                                                aspectRatio: 1.2,
                                                 child: Image.network(
-                                                  saree['imageUrl'] ?? '',
+                                                  _getDisplayImageUrl(saree),
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error,
                                                       stackTrace) {
@@ -492,36 +599,66 @@ class _HomeScreenState extends State<HomeScreen>
                                                 ),
                                               ),
                                             ),
-                                            Padding(
-                                              padding: EdgeInsets.all(8.r),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    saree['name'] ?? 'Unknown',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 11.sp,
-                                                      color: Colors.white,
+                                            Expanded(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.r),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      saree['name'] ??
+                                                          'Unknown',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 12.sp,
+                                                        color: Colors.white,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  SizedBox(height: 3.h),
-                                                  Text(
-                                                    '৳${saree['price'] ?? 0}',
-                                                    style: TextStyle(
-                                                      color: Colors.white
-                                                          .withOpacity(0.8),
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 10.sp,
+                                                    SizedBox(height: 2.h),
+                                                    Text(
+                                                      '${saree['type'] ?? ''} • ${saree['color'] ?? ''}',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withOpacity(0.7),
+                                                        fontSize: 9.sp,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(height: 4.h),
+                                                    Text(
+                                                      _formatPrice(saree),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 11.sp,
+                                                      ),
+                                                    ),
+                                                    if (_getRentalDuration(
+                                                            saree)
+                                                        .isNotEmpty) ...[
+                                                      SizedBox(height: 2.h),
+                                                      Text(
+                                                        _getRentalDuration(
+                                                            saree),
+                                                        style: TextStyle(
+                                                          color: Colors.amber
+                                                              .withOpacity(0.8),
+                                                          fontSize: 9.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -548,6 +685,31 @@ class _HomeScreenState extends State<HomeScreen>
                                             ),
                                           ),
                                         ),
+                                        // Category badge
+                                        Positioned(
+                                          top: 6.h,
+                                          left: 6.w,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 6.w, vertical: 2.h),
+                                            decoration: BoxDecoration(
+                                              color: saree['category'] == 'RENT'
+                                                  ? Colors.blue.withOpacity(0.8)
+                                                  : Colors.green
+                                                      .withOpacity(0.8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.r),
+                                            ),
+                                            child: Text(
+                                              saree['category'] ?? 'SALE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   );
@@ -559,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         SizedBox(height: 24.h),
 
-                        // Premium Collection Section with Category Filter
+                        // Premium Collection Section
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
@@ -588,20 +750,18 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(height: 8.h),
 
-                        // Premium Collection with Category Filter
+                        // Premium Collection
                         SizedBox(
-                          height: 180.h,
+                          height: 220.h,
                           child: StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('sarees')
-                                .where('price', isGreaterThan: 2000)
-                                .orderBy('price', descending: true)
+                                .where('basePrice', isGreaterThan: 2000)
+                                .orderBy('basePrice', descending: true)
                                 .limit(10)
                                 .snapshots(),
                             builder: (context, snapshot) {
                               final allSarees = snapshot.data?.docs ?? [];
-
-                              // Filter by category if the saree has a category field, otherwise show all
                               final sarees = allSarees.where((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
                                 final category = data['category'];
@@ -621,7 +781,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   };
 
                                   return Container(
-                                    width: 130.w,
+                                    width: 150.w,
                                     margin: EdgeInsets.only(right: 12.w),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.1),
@@ -643,9 +803,9 @@ class _HomeScreenState extends State<HomeScreen>
                                                 topRight: Radius.circular(16.r),
                                               ),
                                               child: AspectRatio(
-                                                aspectRatio: 1.1,
+                                                aspectRatio: 1.2,
                                                 child: Image.network(
-                                                  saree['imageUrl'] ?? '',
+                                                  _getDisplayImageUrl(saree),
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error,
                                                       stackTrace) {
@@ -664,35 +824,66 @@ class _HomeScreenState extends State<HomeScreen>
                                                 ),
                                               ),
                                             ),
-                                            Padding(
-                                              padding: EdgeInsets.all(8.r),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    saree['name'] ?? 'Unknown',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 11.sp,
-                                                      color: Colors.white,
+                                            Expanded(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.r),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      saree['name'] ??
+                                                          'Unknown',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 12.sp,
+                                                        color: Colors.white,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  SizedBox(height: 3.h),
-                                                  Text(
-                                                    '৳${saree['price'] ?? 0}',
-                                                    style: TextStyle(
-                                                      color: Colors.amber,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 10.sp,
+                                                    SizedBox(height: 2.h),
+                                                    Text(
+                                                      '${saree['type'] ?? ''} • ${saree['fabric'] ?? ''}',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withOpacity(0.7),
+                                                        fontSize: 9.sp,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(height: 4.h),
+                                                    Text(
+                                                      _formatPrice(saree),
+                                                      style: TextStyle(
+                                                        color: Colors.amber,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 11.sp,
+                                                      ),
+                                                    ),
+                                                    if (_getRentalDuration(
+                                                            saree)
+                                                        .isNotEmpty) ...[
+                                                      SizedBox(height: 2.h),
+                                                      Text(
+                                                        _getRentalDuration(
+                                                            saree),
+                                                        style: TextStyle(
+                                                          color: Colors.amber
+                                                              .withOpacity(0.8),
+                                                          fontSize: 9.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -714,6 +905,31 @@ class _HomeScreenState extends State<HomeScreen>
                                               style: TextStyle(
                                                 color: Colors.black,
                                                 fontSize: 7.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        // Category badge
+                                        Positioned(
+                                          top: 6.h,
+                                          left: 6.w,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 6.w, vertical: 2.h),
+                                            decoration: BoxDecoration(
+                                              color: saree['category'] == 'RENT'
+                                                  ? Colors.blue.withOpacity(0.8)
+                                                  : Colors.green
+                                                      .withOpacity(0.8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.r),
+                                            ),
+                                            child: Text(
+                                              saree['category'] ?? 'SALE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8.sp,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
