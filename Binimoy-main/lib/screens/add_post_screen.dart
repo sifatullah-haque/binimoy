@@ -22,13 +22,24 @@ class _AddPostScreenState extends State<AddPostScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
+  final _retailPriceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _picker = ImagePicker();
-  File? _imageFile;
+
+  // Multiple image files for mandatory pictures
+  File? _ancholImage; // আঁচল
+  File? _parImage; // পাড়
+  File? _jominImage; // জমিন
+  File? _kuchiImage; // কুচি
+
   bool _isLoading = false;
   String _selectedType = 'Jamdani';
-  String _selectedCategory = 'RENT'; // Add category selection
+  String _selectedCategory = 'RENT';
+  String _selectedColor = 'Red';
+  String _selectedFabric = 'Cotton';
+  String _selectedBrand = 'Aarong';
+  // Remove rental percentage variable
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -40,6 +51,7 @@ class _AddPostScreenState extends State<AddPostScreen>
 
   final List<String> _sareeTypes = [
     'Jamdani',
+    'Katan',
     'Banarasi',
     'Silk',
     'Dola Silk',
@@ -51,7 +63,58 @@ class _AddPostScreenState extends State<AddPostScreen>
     'Tussar Silk'
   ];
 
-  final List<String> _categories = ['RENT', 'SALE']; // Add categories list
+  final List<String> _colors = [
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Purple',
+    'Pink',
+    'Orange',
+    'Black',
+    'White',
+    'Gray',
+    'Brown',
+    'Maroon',
+    'Navy',
+    'Gold',
+    'Silver'
+  ];
+
+  final List<String> _fabrics = [
+    'Cotton',
+    'Gel',
+    'Silk',
+    'Georgette',
+    'Chiffon',
+    'Net',
+    'Tussar'
+  ];
+
+  final List<String> _brands = [
+    'Aarong',
+    'Khut',
+    'Kay Kraft',
+    'Le Reve',
+    'Jotey',
+    'Anjans',
+    'Rang',
+    'Yellow',
+    'Daraz',
+    'Deshal',
+    'Local',
+    'Others'
+  ];
+
+  final List<String> _categories = ['RENT', 'SALE'];
+
+  // Image type definitions
+  final Map<String, String> _imageTypes = {
+    'anchol': 'আঁচল (Anchol)',
+    'par': 'পাড় (Par)',
+    'jomin': 'জমিন (Jomin)',
+    'kuchi': 'কুচি (Kuchi)',
+  };
 
   @override
   void initState() {
@@ -64,14 +127,52 @@ class _AddPostScreenState extends State<AddPostScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
+
+    // Listen to retail price changes for automatic calculation
+    _retailPriceController.addListener(_calculateRentalPrice);
   }
 
-  Future<void> _pickImage() async {
+  void _calculateRentalPrice() {
+    // This will trigger UI updates when retail price changes
+    setState(() {});
+  }
+
+  // Simplified pricing calculations - just add 20% service charge
+  double get _basePrice {
+    try {
+      return double.parse(_retailPriceController.text.trim());
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  double get _serviceCharge {
+    return _basePrice * 0.20; // 20% service charge
+  }
+
+  double get _totalPrice {
+    return _basePrice + _serviceCharge;
+  }
+
+  Future<void> _pickImage(String imageType) async {
     try {
       final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
-          _imageFile = File(pickedFile.path);
+          switch (imageType) {
+            case 'anchol':
+              _ancholImage = File(pickedFile.path);
+              break;
+            case 'par':
+              _parImage = File(pickedFile.path);
+              break;
+            case 'jomin':
+              _jominImage = File(pickedFile.path);
+              break;
+            case 'kuchi':
+              _kuchiImage = File(pickedFile.path);
+              break;
+          }
         });
       }
     } catch (e) {
@@ -84,7 +185,7 @@ class _AddPostScreenState extends State<AddPostScreen>
     }
   }
 
-  Future<String> _uploadImage(File imageFile) async {
+  Future<String> _uploadImage(File imageFile, String imageType) async {
     try {
       return await _storageService.uploadImage(
         imageFile,
@@ -98,31 +199,33 @@ class _AddPostScreenState extends State<AddPostScreen>
     } catch (e) {
       print('Error uploading image: $e');
       throw Exception('Failed to upload image: ${e.toString()}');
-    } finally {
-      setState(() => _showProgress = false);
     }
   }
 
   Future<void> _submitPost() async {
-    // Validate form and image
+    // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_imageFile == null) {
+    // Validate all mandatory images
+    if (_ancholImage == null ||
+        _parImage == null ||
+        _jominImage == null ||
+        _kuchiImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please select an image'),
+          content: Text('Please upload all 4 mandatory pictures'),
           backgroundColor: Colors.red.shade400,
         ),
       );
       return;
     }
 
-    // Check if price is a valid number
-    double? price;
+    // Check if price is valid
+    double? basePrice;
     try {
-      price = double.parse(_priceController.text.trim());
+      basePrice = double.parse(_retailPriceController.text.trim());
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -136,9 +239,8 @@ class _AddPostScreenState extends State<AddPostScreen>
     if (!mounted) return;
     setState(() => _isLoading = true);
 
-    // Add a timeout to prevent infinite loading state
     Timer? timeoutTimer;
-    timeoutTimer = Timer(Duration(seconds: 60), () {
+    timeoutTimer = Timer(Duration(seconds: 120), () {
       if (_isLoading && mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,49 +253,46 @@ class _AddPostScreenState extends State<AddPostScreen>
     });
 
     try {
-      // Get current user
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('User not logged in');
       }
 
-      print('Starting to upload saree post...');
-      print('Image path: ${_imageFile!.path}');
-
-      // Validate image file before uploading
-      if (!await _imageFile!.exists() || await _imageFile!.length() == 0) {
-        throw Exception('Invalid image file: File does not exist or is empty');
-      }
-
-      // Use new upload method
-      final imageUrl = await _uploadImage(_imageFile!);
+      // Upload all images
+      final ancholUrl = await _uploadImage(_ancholImage!, 'anchol');
+      final parUrl = await _uploadImage(_parImage!, 'par');
+      final jominUrl = await _uploadImage(_jominImage!, 'jomin');
+      final kuchiUrl = await _uploadImage(_kuchiImage!, 'kuchi');
 
       // Save post data to Firestore
-      print('Saving data to Firestore...');
       await FirebaseFirestore.instance.collection('sarees').add({
         'name': _nameController.text.trim(),
-        'price': price,
+        'basePrice': basePrice,
+        'serviceCharge': _serviceCharge,
+        'totalPrice': _totalPrice,
         'description': _descriptionController.text.trim(),
         'type': _selectedType,
-        'category': _selectedCategory, // Add category to data
-        'imageUrl': imageUrl,
+        'color': _selectedColor,
+        'fabric': _selectedFabric,
+        'brand': _selectedBrand,
+        'category': _selectedCategory,
+        'images': {
+          'anchol': ancholUrl,
+          'par': parUrl,
+          'jomin': jominUrl,
+          'kuchi': kuchiUrl,
+        },
         'userId': user.uid,
         'userName': user.displayName ?? 'Anonymous',
         'createdAt': FieldValue.serverTimestamp(),
         'isAvailable': true,
       });
 
-      print('Post saved to Firestore successfully');
-
-      // Cancel the timeout timer
       timeoutTimer?.cancel();
 
       if (!mounted) return;
-
-      // Reset loading state before navigating
       setState(() => _isLoading = false);
 
-      // Show success message and pop screen
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -202,16 +301,11 @@ class _AddPostScreenState extends State<AddPostScreen>
         ),
       );
     } catch (e) {
-      // Cancel the timeout timer
       timeoutTimer?.cancel();
-
       print('Error posting saree: $e');
       if (!mounted) return;
-
-      // Reset loading state
       setState(() => _isLoading = false);
 
-      // Show error message with more details
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Upload failed: ${e.toString().split('\n')[0]}'),
@@ -224,6 +318,8 @@ class _AddPostScreenState extends State<AddPostScreen>
           ),
         ),
       );
+    } finally {
+      setState(() => _showProgress = false);
     }
   }
 
@@ -297,7 +393,7 @@ class _AddPostScreenState extends State<AddPostScreen>
                     ),
                   ),
 
-                  // Category Selection Buttons (matching home screen style)
+                  // Category Selection Buttons
                   Padding(
                     padding:
                         EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -403,138 +499,67 @@ class _AddPostScreenState extends State<AddPostScreen>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Image Picker with Glass Effect
-                                    GestureDetector(
-                                      onTap: _pickImage,
-                                      child: Container(
-                                        height: 200.h,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(20.r),
-                                          border: Border.all(
-                                            color:
-                                                Colors.white.withOpacity(0.3),
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(20.r),
-                                          child: _imageFile != null
-                                              ? Stack(
-                                                  children: [
-                                                    Image.file(
-                                                      _imageFile!,
-                                                      fit: BoxFit.cover,
-                                                      width: double.infinity,
-                                                      height: double.infinity,
-                                                    ),
-                                                    // Dark overlay for better visibility
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        gradient:
-                                                            LinearGradient(
-                                                          begin: Alignment
-                                                              .topCenter,
-                                                          end: Alignment
-                                                              .bottomCenter,
-                                                          colors: [
-                                                            Colors.transparent,
-                                                            Colors.black
-                                                                .withOpacity(
-                                                                    0.3),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    // Change photo button
-                                                    Positioned(
-                                                      bottom: 12.h,
-                                                      right: 12.w,
-                                                      child: Container(
-                                                        padding:
-                                                            EdgeInsets.all(8.r),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.white
-                                                              .withOpacity(0.2),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      20.r),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.edit,
-                                                          color: Colors.white,
-                                                          size: 20.r,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                              : BackdropFilter(
-                                                  filter: ImageFilter.blur(
-                                                      sigmaX: 10, sigmaY: 10),
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white
-                                                          .withOpacity(0.1),
-                                                    ),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  20.r),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                    0.1),
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
-                                                          child: Icon(
-                                                            Icons
-                                                                .add_photo_alternate,
-                                                            size: 40.r,
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 16.h),
-                                                        Text(
-                                                          'Add Saree Photo',
-                                                          style: TextStyle(
-                                                            fontSize: 18.sp,
-                                                            color: Colors.white,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 8.h),
-                                                        Text(
-                                                          'Tap to select from gallery',
-                                                          style: TextStyle(
-                                                            fontSize: 14.sp,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                    0.7),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                        ),
+                                    // Mandatory Pictures Section
+                                    Text(
+                                      '4 Mandatory Standard Pictures',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    // Image Grid
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 12.w,
+                                        mainAxisSpacing: 12.h,
+                                        childAspectRatio: 1.1,
+                                      ),
+                                      itemCount: _imageTypes.length,
+                                      itemBuilder: (context, index) {
+                                        String key =
+                                            _imageTypes.keys.elementAt(index);
+                                        String label = _imageTypes[key]!;
+                                        File? imageFile;
+
+                                        switch (key) {
+                                          case 'anchol':
+                                            imageFile = _ancholImage;
+                                            break;
+                                          case 'par':
+                                            imageFile = _parImage;
+                                            break;
+                                          case 'jomin':
+                                            imageFile = _jominImage;
+                                            break;
+                                          case 'kuchi':
+                                            imageFile = _kuchiImage;
+                                            break;
+                                        }
+
+                                        return _buildImagePicker(
+                                            key, label, imageFile);
+                                      },
                                     ),
                                     SizedBox(height: 24.h),
 
-                                    // Form Fields
+                                    // Basic Information
+                                    Text(
+                                      'Basic Information',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 16.h),
+
                                     _buildGlassTextField(
                                       controller: _nameController,
                                       labelText: 'Saree Name',
@@ -547,91 +572,75 @@ class _AddPostScreenState extends State<AddPostScreen>
                                     ),
                                     SizedBox(height: 16.h),
 
-                                    // Saree Type Dropdown
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(16.r),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(16.r),
-                                        child: BackdropFilter(
-                                          filter: ImageFilter.blur(
-                                              sigmaX: 10, sigmaY: 10),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Colors.white.withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(16.r),
-                                              border: Border.all(
-                                                color: Colors.white
-                                                    .withOpacity(0.3),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child:
-                                                DropdownButtonFormField<String>(
-                                              value: _selectedType,
-                                              decoration: InputDecoration(
-                                                labelText: 'Saree Type',
-                                                labelStyle: TextStyle(
-                                                  color: Colors.white
-                                                      .withOpacity(0.9),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                                prefixIcon: Icon(
-                                                  Icons.category_outlined,
-                                                  color: Colors.white
-                                                      .withOpacity(0.8),
-                                                ),
-                                                border: InputBorder.none,
-                                                contentPadding:
-                                                    EdgeInsets.symmetric(
-                                                  vertical: 16.h,
-                                                  horizontal: 16.w,
-                                                ),
-                                              ),
-                                              dropdownColor:
-                                                  Colors.black.withOpacity(0.8),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 15.sp,
-                                              ),
-                                              icon: Icon(
-                                                Icons.keyboard_arrow_down,
-                                                color: Colors.white
-                                                    .withOpacity(0.8),
-                                              ),
-                                              items: _sareeTypes
-                                                  .map((String type) {
-                                                return DropdownMenuItem(
-                                                  value: type,
-                                                  child: Text(
-                                                    type,
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                              onChanged: (String? newValue) {
-                                                setState(() {
-                                                  _selectedType = newValue!;
-                                                });
-                                              },
-                                            ),
+                                    // Row for Type and Color
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildGlassDropdown(
+                                            value: _selectedType,
+                                            labelText: 'Saree Type',
+                                            items: _sareeTypes,
+                                            prefixIcon: Icons.category_outlined,
+                                            onChanged: (value) => setState(
+                                                () => _selectedType = value!),
                                           ),
                                         ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: _buildGlassDropdown(
+                                            value: _selectedColor,
+                                            labelText: 'Color',
+                                            items: _colors,
+                                            prefixIcon: Icons.palette_outlined,
+                                            onChanged: (value) => setState(
+                                                () => _selectedColor = value!),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    // Row for Fabric and Brand
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildGlassDropdown(
+                                            value: _selectedFabric,
+                                            labelText: 'Fabric',
+                                            items: _fabrics,
+                                            prefixIcon: Icons.texture_outlined,
+                                            onChanged: (value) => setState(
+                                                () => _selectedFabric = value!),
+                                          ),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: _buildGlassDropdown(
+                                            value: _selectedBrand,
+                                            labelText: 'Brand',
+                                            items: _brands,
+                                            prefixIcon: Icons.business_outlined,
+                                            onChanged: (value) => setState(
+                                                () => _selectedBrand = value!),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16.h),
+
+                                    // Pricing Section
+                                    Text(
+                                      'Pricing Information',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     SizedBox(height: 16.h),
 
                                     _buildGlassTextField(
-                                      controller: _priceController,
+                                      controller: _retailPriceController,
                                       labelText: 'Price',
                                       hintText: 'Enter price in BDT',
                                       prefixIcon:
@@ -643,12 +652,61 @@ class _AddPostScreenState extends State<AddPostScreen>
                                               ? 'Please enter a price'
                                               : null,
                                     ),
+                                    SizedBox(height: 8.h),
+
+                                    // Service charge info text
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 16.w),
+                                      child: Text(
+                                        '20% extra price will be added as service charge',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.7),
+                                          fontSize: 12.sp,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
                                     SizedBox(height: 16.h),
+
+                                    // Price Calculation Display
+                                    if (_retailPriceController
+                                        .text.isNotEmpty) ...[
+                                      Container(
+                                        padding: EdgeInsets.all(16.r),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(16.r),
+                                          border: Border.all(
+                                            color:
+                                                Colors.white.withOpacity(0.3),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            _buildPriceRow('Base Price:',
+                                                '৳ ${_basePrice.toStringAsFixed(2)}'),
+                                            _buildPriceRow(
+                                                'Service Charge (20%):',
+                                                '৳ ${_serviceCharge.toStringAsFixed(2)}'),
+                                            Divider(
+                                                color: Colors.white
+                                                    .withOpacity(0.3)),
+                                            _buildPriceRow('Total Amount:',
+                                                '৳ ${_totalPrice.toStringAsFixed(2)}',
+                                                isTotal: true),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 16.h),
+                                    ],
 
                                     _buildGlassTextField(
                                       controller: _descriptionController,
                                       labelText: 'Description',
-                                      hintText: 'Describe your saree...',
+                                      hintText:
+                                          'Describe your saree in detail...',
                                       prefixIcon: Icons.description_outlined,
                                       maxLines: 4,
                                       validator: (value) =>
@@ -659,7 +717,7 @@ class _AddPostScreenState extends State<AddPostScreen>
                                     SizedBox(height: 24.h),
 
                                     // Upload Progress
-                                    if (_showProgress)
+                                    if (_showProgress) ...[
                                       Padding(
                                         padding: EdgeInsets.symmetric(
                                             vertical: 12.h),
@@ -694,6 +752,7 @@ class _AddPostScreenState extends State<AddPostScreen>
                                           ],
                                         ),
                                       ),
+                                    ],
 
                                     // Submit Button
                                     Container(
@@ -781,6 +840,233 @@ class _AddPostScreenState extends State<AddPostScreen>
     );
   }
 
+  Widget _buildImagePicker(String imageType, String label, File? imageFile) {
+    return GestureDetector(
+      onTap: () => _pickImage(imageType),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.r),
+          child: imageFile != null
+              ? Stack(
+                  children: [
+                    Image.file(
+                      imageFile,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.6),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 8.h,
+                      left: 8.w,
+                      right: 8.w,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8.h,
+                      right: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.all(4.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 16.r,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate,
+                          size: 24.r,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        SizedBox(height: 8.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassDropdown({
+    required String value,
+    required String labelText,
+    required List<String> items,
+    required IconData prefixIcon,
+    required Function(String?) onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: value,
+              decoration: InputDecoration(
+                labelText: labelText,
+                labelStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+                prefixIcon: Icon(
+                  prefixIcon,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 20.h,
+                  horizontal: 16.w,
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
+              dropdownColor: Colors.black.withOpacity(0.8),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14.sp,
+              ),
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white.withOpacity(0.8),
+              ),
+              isExpanded: true, // This ensures the dropdown takes full width
+              items: items.map((String item) {
+                return DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+              selectedItemBuilder: (BuildContext context) {
+                return items.map((String item) {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Container(
+                        width: constraints.maxWidth,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      );
+                    },
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, String amount, {bool isTotal = false}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: isTotal ? 16.sp : 14.sp,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+          Text(
+            amount,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isTotal ? 16.sp : 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGlassTextField({
     required TextEditingController controller,
     required String labelText,
@@ -838,10 +1124,11 @@ class _AddPostScreenState extends State<AddPostScreen>
                     : null,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                  vertical: 16.h,
+                  vertical: 20.h,
                   horizontal: 16.w,
                 ),
                 alignLabelWithHint: true,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
               ),
               keyboardType: keyboardType,
               maxLines: maxLines ?? 1,
@@ -856,7 +1143,7 @@ class _AddPostScreenState extends State<AddPostScreen>
   @override
   void dispose() {
     _nameController.dispose();
-    _priceController.dispose();
+    _retailPriceController.dispose();
     _descriptionController.dispose();
     _animationController.dispose();
     super.dispose();
