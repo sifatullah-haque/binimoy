@@ -32,6 +32,10 @@ class _AddPostScreenState extends State<AddPostScreen>
   File? _jominImage; // জমিন
   File? _kuchiImage; // কুচি
 
+  // Date controllers for rent
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   bool _isLoading = false;
   String _selectedType = 'Jamdani';
   String _selectedCategory = 'RENT';
@@ -137,7 +141,7 @@ class _AddPostScreenState extends State<AddPostScreen>
     setState(() {});
   }
 
-  // Simplified pricing calculations - just add 20% service charge
+  // Modified pricing calculations for day-wise rental
   double get _basePrice {
     try {
       return double.parse(_retailPriceController.text.trim());
@@ -146,11 +150,31 @@ class _AddPostScreenState extends State<AddPostScreen>
     }
   }
 
+  int get _rentalDays {
+    if (_selectedCategory == 'RENT' && _startDate != null && _endDate != null) {
+      return _endDate!.difference(_startDate!).inDays + 1;
+    }
+    return 0;
+  }
+
+  double get _totalRentalPrice {
+    if (_selectedCategory == 'RENT') {
+      return _basePrice * _rentalDays;
+    }
+    return _basePrice;
+  }
+
   double get _serviceCharge {
-    return _basePrice * 0.20; // 20% service charge
+    if (_selectedCategory == 'RENT') {
+      return _totalRentalPrice * 0.20; // 20% service charge on total rental
+    }
+    return _basePrice * 0.20; // 20% service charge for sale
   }
 
   double get _totalPrice {
+    if (_selectedCategory == 'RENT') {
+      return _totalRentalPrice + _serviceCharge;
+    }
     return _basePrice + _serviceCharge;
   }
 
@@ -205,6 +229,17 @@ class _AddPostScreenState extends State<AddPostScreen>
   Future<void> _submitPost() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate dates for rent category
+    if (_selectedCategory == 'RENT' && (_startDate == null || _endDate == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select start and end dates for rental'),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
       return;
     }
 
@@ -265,7 +300,7 @@ class _AddPostScreenState extends State<AddPostScreen>
       final kuchiUrl = await _uploadImage(_kuchiImage!, 'kuchi');
 
       // Save post data to Firestore
-      await FirebaseFirestore.instance.collection('sarees').add({
+      Map<String, dynamic> postData = {
         'name': _nameController.text.trim(),
         'basePrice': basePrice,
         'serviceCharge': _serviceCharge,
@@ -286,7 +321,19 @@ class _AddPostScreenState extends State<AddPostScreen>
         'userName': user.displayName ?? 'Anonymous',
         'createdAt': FieldValue.serverTimestamp(),
         'isAvailable': true,
-      });
+      };
+
+      // Add rental-specific fields
+      if (_selectedCategory == 'RENT') {
+        postData.addAll({
+          'startDate': Timestamp.fromDate(_startDate!),
+          'endDate': Timestamp.fromDate(_endDate!),
+          'rentalDays': _rentalDays,
+          'totalRentalPrice': _totalRentalPrice,
+        });
+      }
+
+      await FirebaseFirestore.instance.collection('sarees').add(postData);
 
       timeoutTimer?.cancel();
 
@@ -320,6 +367,44 @@ class _AddPostScreenState extends State<AddPostScreen>
       );
     } finally {
       setState(() => _showProgress = false);
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate 
+        ? (_startDate ?? DateTime.now())
+        : (_endDate ?? _startDate?.add(Duration(days: 1)) ?? DateTime.now().add(Duration(days: 1))),
+      firstDate: isStartDate ? DateTime.now() : (_startDate ?? DateTime.now()),
+      lastDate: DateTime.now().add(Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: Colors.white,
+              onPrimary: Colors.black,
+              surface: Colors.black.withOpacity(0.8),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+          // Reset end date if it's before start date
+          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+            _endDate = null;
+          }
+        } else {
+          _endDate = picked;
+        }
+      });
     }
   }
 
@@ -641,8 +726,8 @@ class _AddPostScreenState extends State<AddPostScreen>
 
                                     _buildGlassTextField(
                                       controller: _retailPriceController,
-                                      labelText: 'Price',
-                                      hintText: 'Enter price in BDT',
+                                      labelText: _selectedCategory == 'RENT' ? 'Price per Day' : 'Price',
+                                      hintText: _selectedCategory == 'RENT' ? 'Enter daily rental price in BDT' : 'Enter price in BDT',
                                       prefixIcon:
                                           Icons.monetization_on_outlined,
                                       keyboardType: TextInputType.number,
@@ -658,7 +743,9 @@ class _AddPostScreenState extends State<AddPostScreen>
                                     Padding(
                                       padding: EdgeInsets.only(left: 16.w),
                                       child: Text(
-                                        '20% extra price will be added as service charge',
+                                        _selectedCategory == 'RENT' 
+                                          ? '20% extra will be added as service charge on total rental amount'
+                                          : '20% extra price will be added as service charge',
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.7),
                                           fontSize: 12.sp,
@@ -667,6 +754,124 @@ class _AddPostScreenState extends State<AddPostScreen>
                                       ),
                                     ),
                                     SizedBox(height: 16.h),
+
+                                    // Date Selection for Rent
+                                    if (_selectedCategory == 'RENT') ...[
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () => _selectDate(context, true),
+                                              child: Container(
+                                                padding: EdgeInsets.all(16.r),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(16.r),
+                                                  border: Border.all(
+                                                    color: Colors.white.withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.calendar_today,
+                                                      color: Colors.white.withOpacity(0.8),
+                                                      size: 20.r,
+                                                    ),
+                                                    SizedBox(width: 12.w),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            'Start Date',
+                                                            style: TextStyle(
+                                                              color: Colors.white.withOpacity(0.9),
+                                                              fontSize: 12.sp,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 4.h),
+                                                          Text(
+                                                            _startDate != null
+                                                                ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                                                                : 'Select date',
+                                                            style: TextStyle(
+                                                              color: _startDate != null 
+                                                                ? Colors.white 
+                                                                : Colors.white.withOpacity(0.5),
+                                                              fontSize: 14.sp,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12.w),
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () => _selectDate(context, false),
+                                              child: Container(
+                                                padding: EdgeInsets.all(16.r),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(16.r),
+                                                  border: Border.all(
+                                                    color: Colors.white.withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.calendar_today,
+                                                      color: Colors.white.withOpacity(0.8),
+                                                      size: 20.r,
+                                                    ),
+                                                    SizedBox(width: 12.w),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            'End Date',
+                                                            style: TextStyle(
+                                                              color: Colors.white.withOpacity(0.9),
+                                                              fontSize: 12.sp,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 4.h),
+                                                          Text(
+                                                            _endDate != null
+                                                                ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                                                                : 'Select date',
+                                                            style: TextStyle(
+                                                              color: _endDate != null 
+                                                                ? Colors.white 
+                                                                : Colors.white.withOpacity(0.5),
+                                                              fontSize: 14.sp,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 16.h),
+                                    ],
 
                                     // Price Calculation Display
                                     if (_retailPriceController
@@ -685,8 +890,15 @@ class _AddPostScreenState extends State<AddPostScreen>
                                         ),
                                         child: Column(
                                           children: [
-                                            _buildPriceRow('Base Price:',
-                                                '৳ ${_basePrice.toStringAsFixed(2)}'),
+                                            if (_selectedCategory == 'RENT') ...[
+                                              _buildPriceRow('Price per Day:', '৳ ${_basePrice.toStringAsFixed(2)}'),
+                                              if (_rentalDays > 0) ...[
+                                                _buildPriceRow('Rental Days:', '${_rentalDays} days'),
+                                                _buildPriceRow('Subtotal:', '৳ ${_totalRentalPrice.toStringAsFixed(2)}'),
+                                              ],
+                                            ] else ...[
+                                              _buildPriceRow('Base Price:', '৳ ${_basePrice.toStringAsFixed(2)}'),
+                                            ],
                                             _buildPriceRow(
                                                 'Service Charge (20%):',
                                                 '৳ ${_serviceCharge.toStringAsFixed(2)}'),
