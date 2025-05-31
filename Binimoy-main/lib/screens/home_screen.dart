@@ -78,59 +78,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.brown.withOpacity(0.2),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.brown.shade800.withOpacity(0.3),
-                    Colors.brown.shade600.withOpacity(0.3),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          'Binimoy',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 20.sp,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.white, size: 22.r),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SearchScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.receipt_long, color: Colors.white, size: 22.r),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TransactionHistoryScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -144,18 +91,62 @@ class _HomeScreenState extends State<HomeScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.brown.shade800.withOpacity(0.7),
-                Colors.brown.shade600.withOpacity(0.8),
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
               ],
             ),
           ),
           child: SafeArea(
             child: Column(
               children: [
+                // Header with search and notification
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Binimoy',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 24.sp,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon:
+                            Icon(Icons.search, color: Colors.white, size: 24.r),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SearchScreen()),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.notifications_outlined,
+                            color: Colors.white, size: 24.r),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransactionHistoryScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
                 // Welcome message and RENT/RESALE buttons
                 Padding(
                   padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   child: Column(
                     children: [
                       Text(
@@ -167,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen>
                           letterSpacing: 1.0,
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       Row(
                         children: [
                           Expanded(
@@ -178,12 +169,12 @@ class _HomeScreenState extends State<HomeScreen>
                                 });
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                padding: EdgeInsets.symmetric(vertical: 8.h),
                                 decoration: BoxDecoration(
                                   color: _selectedCategory == 'RENT'
                                       ? Colors.white
                                       : Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20.r),
+                                  borderRadius: BorderRadius.circular(16.r),
                                   border: Border.all(
                                     color: Colors.white.withOpacity(0.3),
                                     width: 1.5,
@@ -196,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen>
                                     color: _selectedCategory == 'RENT'
                                         ? Colors.brown.shade800
                                         : Colors.white,
-                                    fontSize: 16.sp,
+                                    fontSize: 14.sp,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,
                                   ),
@@ -213,12 +204,12 @@ class _HomeScreenState extends State<HomeScreen>
                                 });
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                padding: EdgeInsets.symmetric(vertical: 8.h),
                                 decoration: BoxDecoration(
                                   color: _selectedCategory == 'RESALE'
                                       ? Colors.white
                                       : Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20.r),
+                                  borderRadius: BorderRadius.circular(16.r),
                                   border: Border.all(
                                     color: Colors.white.withOpacity(0.3),
                                     width: 1.5,
@@ -231,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen>
                                     color: _selectedCategory == 'RESALE'
                                         ? Colors.brown.shade800
                                         : Colors.white,
-                                    fontSize: 16.sp,
+                                    fontSize: 14.sp,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,
                                   ),
@@ -245,83 +236,58 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
 
-                // Main content
+                // Main scrollable content
                 Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(top: 12.h),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(25.r),
-                        topRight: Radius.circular(25.r),
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(25.r),
-                        topRight: Radius.circular(25.r),
-                      ),
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: StreamBuilder<QuerySnapshot>(
-                          stream: _firestore
-                              .collection('sarees')
-                              .orderBy('createdAt', descending: true)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 16.h),
 
-                            if (snapshot.hasError) {
-                              return Center(
-                                child: Text('Error: ${snapshot.error}'),
-                              );
-                            }
-
-                            final sarees = snapshot.data?.docs ?? [];
-
-                            if (sarees.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Image.asset(
-                                      'assets/no_posts.png',
-                                      height: 100.h,
-                                      width: 100.w,
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Text(
-                                      'No Sarees Available',
-                                      style: TextStyle(
-                                        fontSize: 18.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.brown.shade800,
-                                      ),
-                                    ),
-                                    SizedBox(height: 6.h),
-                                    Text(
-                                      'Be the first to post a saree!',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12.sp,
-                                      ),
-                                    ),
-                                  ],
+                        // New Arrivals Section
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: Row(
+                            children: [
+                              Text(
+                                'New Arrivals',
+                                style: TextStyle(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
-                              );
-                            }
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  'See All',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
 
-                            return Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w, vertical: 12.h),
-                              child: MasonryGridView.count(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 12.h,
-                                crossAxisSpacing: 12.w,
+                        // New Arrivals Horizontal List
+                        SizedBox(
+                          height: 180.h,
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _firestore
+                                .collection('sarees')
+                                .orderBy('createdAt', descending: true)
+                                .limit(10)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final sarees = snapshot.data?.docs ?? [];
+
+                              return ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
                                 itemCount: sarees.length,
                                 itemBuilder: (context, index) {
                                   final saree = {
@@ -330,149 +296,411 @@ class _HomeScreenState extends State<HomeScreen>
                                     'id': sarees[index].id,
                                   };
 
-                                  // Create alternating heights for visual interest
-                                  final isEvenIndex = index % 2 == 0;
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              SareeDetailScreen(saree: saree),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(12.r),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.brown.withOpacity(0.1),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
+                                  return Container(
+                                    width: 130.w,
+                                    margin: EdgeInsets.only(right: 12.w),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1,
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Image with rounded corners at top
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(12.r),
-                                              topRight: Radius.circular(12.r),
-                                            ),
-                                            child: AspectRatio(
-                                              aspectRatio:
-                                                  0.8 + (isEvenIndex ? 0.1 : 0),
-                                              child: Image.network(
-                                                saree['imageUrl'] ?? '',
-                                                fit: BoxFit.cover,
-                                                loadingBuilder: (context, child,
-                                                    loadingProgress) {
-                                                  if (loadingProgress == null)
-                                                    return child;
-                                                  return Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      value: loadingProgress
-                                                                  .expectedTotalBytes !=
-                                                              null
-                                                          ? loadingProgress
-                                                                  .cumulativeBytesLoaded /
-                                                              loadingProgress
-                                                                  .expectedTotalBytes!
-                                                          : null,
-                                                    ),
-                                                  );
-                                                },
-                                                errorBuilder: (context, error,
-                                                    stackTrace) {
-                                                  return Container(
-                                                    color: Colors.grey.shade200,
-                                                    child: Icon(
-                                                      Icons.image_not_supported,
-                                                      color:
-                                                          Colors.grey.shade400,
-                                                      size: 40.r,
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(16.r),
+                                            topRight: Radius.circular(16.r),
                                           ),
-
-                                          // Saree details
-                                          Padding(
-                                            padding: EdgeInsets.all(10.r),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  saree['name'] ?? 'Unknown',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.sp,
-                                                    color: Colors.black87,
+                                          child: AspectRatio(
+                                            aspectRatio: 1.1,
+                                            child: Image.network(
+                                              saree['imageUrl'] ?? '',
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Container(
+                                                  color: Colors.grey.shade200,
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: Colors.grey.shade400,
+                                                    size: 30.r,
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                SizedBox(height: 4.h),
-                                                Row(
-                                                  children: [
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                        horizontal: 6.w,
-                                                        vertical: 3.h,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors
-                                                            .brown.shade50,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(6.r),
-                                                      ),
-                                                      child: Text(
-                                                        '৳${saree['price'] ?? 0}',
-                                                        style: TextStyle(
-                                                          color: Colors
-                                                              .brown.shade700,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 12.sp,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const Spacer(),
-                                                    Icon(
-                                                      Icons.favorite_border,
-                                                      size: 16.r,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
+                                                );
+                                              },
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(8.r),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                saree['name'] ?? 'Unknown',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 11.sp,
+                                                  color: Colors.white,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 3.h),
+                                              Text(
+                                                '৳${saree['price'] ?? 0}',
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withOpacity(0.8),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 10.sp,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 },
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
+
+                        SizedBox(height: 24.h),
+
+                        // Best Deals Section
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Best Deals',
+                                style: TextStyle(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  'See All',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+
+                        // Best Deals Horizontal List
+                        SizedBox(
+                          height: 180.h,
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _firestore
+                                .collection('sarees')
+                                .orderBy('createdAt', descending: true)
+                                .limit(10)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final sarees = snapshot.data?.docs ?? [];
+
+                              return ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                itemCount: sarees.length,
+                                itemBuilder: (context, index) {
+                                  final saree = {
+                                    ...sarees[index].data()
+                                        as Map<String, dynamic>,
+                                    'id': sarees[index].id,
+                                  };
+
+                                  return Container(
+                                    width: 130.w,
+                                    margin: EdgeInsets.only(right: 12.w),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(16.r),
+                                                topRight: Radius.circular(16.r),
+                                              ),
+                                              child: AspectRatio(
+                                                aspectRatio: 1.1,
+                                                child: Image.network(
+                                                  saree['imageUrl'] ?? '',
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        color: Colors
+                                                            .grey.shade400,
+                                                        size: 30.r,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.r),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    saree['name'] ?? 'Unknown',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 11.sp,
+                                                      color: Colors.white,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  SizedBox(height: 3.h),
+                                                  Text(
+                                                    '৳${saree['price'] ?? 0}',
+                                                    style: TextStyle(
+                                                      color: Colors.white
+                                                          .withOpacity(0.8),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 10.sp,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Deal badge
+                                        Positioned(
+                                          top: 6.h,
+                                          right: 6.w,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 5.w, vertical: 2.h),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius:
+                                                  BorderRadius.circular(6.r),
+                                            ),
+                                            child: Text(
+                                              'DEAL',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 7.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+
+                        SizedBox(height: 24.h),
+
+                        // Premium Collection Section
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Premium Collection',
+                                style: TextStyle(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  'See All',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+
+                        // Premium Collection Horizontal List
+                        SizedBox(
+                          height: 180.h,
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _firestore
+                                .collection('sarees')
+                                .where('price', isGreaterThan: 2000)
+                                .orderBy('price', descending: true)
+                                .limit(10)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final sarees = snapshot.data?.docs ?? [];
+
+                              return ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                itemCount: sarees.length,
+                                itemBuilder: (context, index) {
+                                  final saree = {
+                                    ...sarees[index].data()
+                                        as Map<String, dynamic>,
+                                    'id': sarees[index].id,
+                                  };
+
+                                  return Container(
+                                    width: 130.w,
+                                    margin: EdgeInsets.only(right: 12.w),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      border: Border.all(
+                                        color: Colors.amber.withOpacity(0.3),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(16.r),
+                                                topRight: Radius.circular(16.r),
+                                              ),
+                                              child: AspectRatio(
+                                                aspectRatio: 1.1,
+                                                child: Image.network(
+                                                  saree['imageUrl'] ?? '',
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        color: Colors
+                                                            .grey.shade400,
+                                                        size: 30.r,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.r),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    saree['name'] ?? 'Unknown',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 11.sp,
+                                                      color: Colors.white,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  SizedBox(height: 3.h),
+                                                  Text(
+                                                    '৳${saree['price'] ?? 0}',
+                                                    style: TextStyle(
+                                                      color: Colors.amber,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 10.sp,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Premium badge
+                                        Positioned(
+                                          top: 6.h,
+                                          right: 6.w,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 5.w, vertical: 2.h),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber,
+                                              borderRadius:
+                                                  BorderRadius.circular(6.r),
+                                            ),
+                                            child: Text(
+                                              'PREMIUM',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 7.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+
+                        SizedBox(height: 100.h), // Space for bottom navigation
+                      ],
                     ),
                   ),
                 ),
@@ -482,78 +710,126 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
       floatingActionButton: null,
-      bottomNavigationBar: ClipRect(
+      bottomNavigationBar: ClipRRect(
+        // borderRadius: BorderRadius.only(
+        //   topLeft: Radius.circular(25.r),
+        //   topRight: Radius.circular(25.r),
+        // ),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1.0,
-                ),
+              color: Colors.black.withOpacity(0.3),
+              // borderRadius: BorderRadius.only(
+              //   topLeft: Radius.circular(25.r),
+              //   topRight: Radius.circular(25.r),
+              // ),
+              border: Border.all(
+                color: Colors.brown.withOpacity(0.3),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  color: Colors.brown.withOpacity(0.2),
+                  blurRadius: 30,
+                  offset: const Offset(0, -5),
                 ),
               ],
             ),
-            child: BottomNavigationBar(
-              currentIndex: _selectedIndex,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: Colors.brown.shade700,
-              unselectedItemColor: Colors.grey.shade600,
-              showSelectedLabels: true,
-              showUnselectedLabels: true,
-              type: BottomNavigationBarType.fixed,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.add_circle_outline),
-                  label: 'List',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.shopping_bag),
-                  label: 'Rentals',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-              ],
-              onTap: (index) {
-                setState(() => _selectedIndex = index);
-                if (index == 1) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddPostScreen()),
-                  );
-                } else if (index == 2) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Chat()),
-                  );
-                } else if (index == 3) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ProfileScreen(authService: widget.authService),
-                    ),
-                  );
-                }
-              },
+            child: Container(
+              height: 80.h,
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(
+                    icon: Icons.home,
+                    label: 'Home',
+                    index: 0,
+                    isSelected: _selectedIndex == 0,
+                  ),
+                  _buildNavItem(
+                    icon: Icons.add_circle_outline,
+                    label: 'List',
+                    index: 1,
+                    isSelected: _selectedIndex == 1,
+                  ),
+                  _buildNavItem(
+                    icon: Icons.shopping_bag,
+                    label: 'Rentals',
+                    index: 2,
+                    isSelected: _selectedIndex == 2,
+                  ),
+                  _buildNavItem(
+                    icon: Icons.person,
+                    label: 'Profile',
+                    index: 3,
+                    isSelected: _selectedIndex == 3,
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        if (index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddPostScreen()),
+          );
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const Chat()),
+          );
+        } else if (index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ProfileScreen(authService: widget.authService),
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24.r,
+              // color: isSelected
+              //     ? Colors.brown.shade200
+              //     : Colors.white.withOpacity(0.7),
+              color: Colors.white.withOpacity(0.7),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                // color: isSelected
+                //     ? Colors.brown.shade200
+                //     : Colors.white.withOpacity(0.7),
+                color: Colors.white.withOpacity(0.7),
+              ),
+            ),
+          ],
         ),
       ),
     );
